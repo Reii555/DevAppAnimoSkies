@@ -154,10 +154,21 @@
             <div class="modal-body">
                 <form id="editSeatForm">
                     <input type="hidden" id="editReservationId">
+                    <input type="hidden" id="editFlightId">
 
                     <!-- Current Flight Info -->
                     <div class="flight-info-box mb-4" id="editFlightInfo">
                         <p class="text-muted">Loading flight information...</p>
+                    </div>
+
+                    <!-- Passenger Selection -->
+                    <div class="mb-4">
+                        <h6><i class="fas fa-user me-2"></i>Select Passenger <span class="text-danger">*</span></h6>
+                        <select class="form-select" id="passengerDropdown" required>
+                            <option value="">Select a passenger</option>
+                        </select>
+                        <small class="text-muted">Choose from your saved passengers</small>
+                        <div id="passengerInfoDisplay" class="mt-2 p-2 bg-light rounded"></div>
                     </div>
 
                     <!-- Seat Selection -->

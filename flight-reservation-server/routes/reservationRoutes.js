@@ -1,18 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const reservationController = require('../controllers/reservationController');
+const authMiddleware = require('../middleware/auth');
 
-// ============================================================
-// Page Routes
-// ============================================================
-router.get('/my-reservations', reservationController.showMyReservations);
+// For authentication
+router.use(authMiddleware.isAuthenticated);
 
-// ============================================================
-// AJAX Routes
-// ============================================================
+// Page routes
+router.get('/', reservationController.showMyReservations);
+
 router.get('/:id/details', reservationController.getReservationDetails);
-router.get('/:flightId/seats/:reservationId', reservationController.getAvailableSeats);
-router.put('/:id/update-seat', reservationController.updateReservationSeat);
+router.get('/:flightId/seats', reservationController.getSeatMap);
+router.put('/:id', reservationController.updateReservation);
 router.delete('/:id/cancel', reservationController.cancelReservation);
 router.get('/count', reservationController.getReservationCount);
 

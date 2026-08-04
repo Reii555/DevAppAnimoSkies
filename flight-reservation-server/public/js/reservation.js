@@ -773,4 +773,355 @@ $(document).ready(function() {
         e.preventDefault();
         window.history.back();
     });
+
+    
+    /**
+     * Load passengers for dropdown
+     */
+    function loadPassengerDropdown() {
+        $.ajax({
+            url: '/profile/passengers/list',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    var dropdown = $('#passengerDropdown');
+                    if (!dropdown.length) return;
+                    
+                    dropdown.html('<option value="">Select a passenger</option>');
+                    
+                    $.each(response.data, function(index, passenger) {
+                        var option = $('<option>')
+                            .val(passenger._id)
+                            .text(passenger.full_name + ' (' + passenger.passport_num + ')');
+                        dropdown.append(option);
+                    });
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading passengers:', xhr);
+                showToast('Error loading passenger list', 'error');
+            }
+        });
+    }
+
+    /**
+     * Open edit reservation modal with passenger selection
+     */
+    function openEditReservationModal(reservationId) {
+        if (!reservationId) {
+            showToast('Invalid reservation ID', 'error');
+            return;
+        }
+        
+        // Show loading state
+        $('#editReservationModal .modal-body').html(
+            '<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading reservation details...</p></div>'
+        );
+        $('#editReservationModal').modal('show');
+        
+        $.ajax({
+            url: '/reservations/' + reservationId + '/details',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    var data = response.data;
+                    
+                    // Populate modal fields
+                    $('#editReservationId').val(data._id);
+                    $('#editBookingRef').text(data.booking_ref);
+                    $('#editFlightInfo').text(
+                        data.flight.airline + ' ' + data.flight.flight_number + 
+                        ' - ' + data.flight.origin + ' → ' + data.flight.destination
+                    );
+                    
+                    var departureDate = new Date(data.flight.departureTime);
+                    $('#editDepartureInfo').text(
+                        'Departure: ' + departureDate.toLocaleDateString('en-PH', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                    );
+                    
+                    var arrivalDate = new Date(data.flight.arrivalTime);
+                    $('#editArrivalInfo').text(
+                        'Arrival: ' + arrivalDate.toLocaleDateString('en-PH', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                    );
+                    
+                    // Set form values
+                    $('#passengerDropdown').val(data.passengerId || '');
+                    $('#editSeatNumber').val(data.seatNumber);
+                    $('#editMealPreference').val(data.mealPreference);
+                    $('#editSpecialRequests').val(data.specialRequests || '');
+                    
+                    // Store current values for price calculation
+                    currentTotalPrice = data.total_price;
+                    currentMeal = data.mealPreference;
+                    selectedSeat = data.seatNumber;
+                    currentFlightId = data.flight._id;
+                    
+                    // Load seat map
+                    loadSeatMap(data.flight._id, data._id);
+                    
+                    // Load passenger dropdown
+                    loadPassengerDropdown();
+                    
+                    // Update modal content
+                    $('#editReservationModal .modal-body').html($('#editReservationForm').html());
+                    
+                } else {
+                    showToast(response.message || 'Error loading reservation details', 'error');
+                    $('#editReservationModal').modal('hide');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading reservation details:', xhr);
+                showToast('Error loading reservation details', 'error');
+                $('#editReservationModal').modal('hide');
+            }
+        });
+    }
+
+    /**
+     * Load seat map
+     */
+    function loadSeatMap(flightId, reservationId) {
+        $.ajax({
+            url: '/reservations/' + flightId + '/seats',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    var data = response.data;
+                    var seatMap = $('#seatMap');
+                    if (!seatMap.length) return;
+                    
+                    seatMap.empty();
+                    
+                    // Create seat layout
+                    var rows = ['A', 'B', 'C', 'D', 'E', 'F'];
+                    var maxRows = 10;
+                    
+                    // Add row labels and seats
+                    for (var row = 1; row <= maxRows; row++) {
+                        var rowDiv = $('<div>').addClass('seat-row');
+                        
+                        // Row number
+                        var rowLabel = $('<div>').addClass('row-label').text(row);
+                        rowDiv.append(rowLabel);
+                        
+                        // Seats
+                        for (var col = 0; col < rows.length; col++) {
+                            var seatNumber = row + rows[col];
+                            var seatDiv = $('<div>').addClass('seat').data('seat', seatNumber);
+                            
+                            var seatData = data.allSeats.find(function(s) {
+                                return s.seat === seatNumber;
+                            });
+                            
+                            if (seatData) {
+                                if (seatData.isOccupied) {
+                                    seatDiv.addClass('occupied').attr('title', 'Occupied');
+                                } else {
+                                    seatDiv.addClass('available').attr('title', 'Available');
+                                    seatDiv.on('click', function() {
+                                        selectSeatInMap($(this).data('seat'));
+                                    });
+                                }
+                            }
+                            
+                            seatDiv.text(seatNumber);
+                            rowDiv.append(seatDiv);
+                        }
+                        
+                        seatMap.append(rowDiv);
+                    }
+                    
+                    // Highlight current seat
+                    var currentSeat = $('#editSeatNumber').val();
+                    if (currentSeat) {
+                        highlightSelectedSeatInMap(currentSeat);
+                    }
+                    
+                    // Update available seats count
+                    var availableCount = data.allSeats.filter(function(s) {
+                        return !s.isOccupied;
+                    }).length;
+                    
+                    var availableInfo = $('#availableSeatsInfo');
+                    if (availableInfo.length) {
+                        availableInfo.html(
+                            '<strong>' + availableCount + '</strong> seats available out of ' + data.totalSeats
+                        );
+                    }
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading seat map:', xhr);
+                showToast('Error loading seat map', 'error');
+            }
+        });
+    }
+
+    /**
+     * Select a seat in the map
+     */
+    function selectSeatInMap(seatNumber) {
+        $('#editSeatNumber').val(seatNumber);
+        highlightSelectedSeatInMap(seatNumber);
+        selectedSeat = seatNumber;
+    }
+
+    /**
+     * Highlight selected seat in the map
+     */
+    function highlightSelectedSeatInMap(seatNumber) {
+        $('.seat').each(function() {
+            $(this).removeClass('selected');
+            if ($(this).data('seat') === seatNumber) {
+                $(this).addClass('selected');
+            }
+        });
+    }
+
+    /**
+     * Update reservation with passenger and seat changes
+     */
+    function updateReservationWithPassenger() {
+        var reservationId = $('#editReservationId').val();
+        var passengerId = $('#passengerDropdown').val();
+        var seatNumber = $('#editSeatNumber').val();
+        var mealPreference = $('#editMealPreference').val();
+        var specialRequests = $('#editSpecialRequests').val();
+
+        // Validate required fields
+        if (!passengerId) {
+            showToast('Please select a passenger', 'error');
+            return;
+        }
+        
+        if (!seatNumber) {
+            showToast('Please select a seat', 'error');
+            return;
+        }
+
+        var data = {
+            passengerId: passengerId,
+            seatNumber: seatNumber,
+            mealPreference: mealPreference,
+            specialRequests: specialRequests
+        };
+
+        var submitBtn = $('#saveReservationEdit');
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...');
+
+        $.ajax({
+            url: '/reservations/' + reservationId,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                if (response.success) {
+                    showToast('Reservation updated successfully!', 'success');
+                    $('#editReservationModal').modal('hide');
+                    location.reload();
+                } else {
+                    showToast(response.message || 'Error updating reservation', 'error');
+                    submitBtn.prop('disabled', false).html('Update Reservation');
+                }
+            },
+            error: function(xhr) {
+                var response = xhr.responseJSON;
+                showToast(response?.message || 'Error updating reservation', 'error');
+                submitBtn.prop('disabled', false).html('Update Reservation');
+            }
+        });
+    }
+
+    /**
+     * Close edit reservation modal
+     */
+    function closeEditReservationModal() {
+        $('#editReservationModal').modal('hide');
+    }
+
+    // Edit reservation button click
+    $(document).on('click', '.edit-reservation-btn', function(e) {
+        e.preventDefault();
+        var reservationId = $(this).data('reservation-id');
+        openEditReservationModal(reservationId);
+    });
+
+    // Close modal button
+    $(document).on('click', '.close-edit-modal', function(e) {
+        e.preventDefault();
+        closeEditReservationModal();
+    });
+
+    // Save reservation edit
+    $(document).on('click', '#saveReservationEdit', function(e) {
+        e.preventDefault();
+        updateReservationWithPassenger();
+    });
+
+    // Close modal when clicking outside
+    $(document).on('click', '#editReservationModal', function(e) {
+        if ($(e.target).is('#editReservationModal')) {
+            closeEditReservationModal();
+        }
+    });
+
+    // Close modal with Escape key
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && $('#editReservationModal').is(':visible')) {
+            closeEditReservationModal();
+        }
+    });
+
+    $(document).on('change', '#passengerDropdown', function() {
+        var selectedPassengerId = $(this).val();
+        if (selectedPassengerId) {
+            // Optionally update passenger info display
+            $.ajax({
+                url: '/profile/passengers/' + selectedPassengerId,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        var passenger = response.data;
+                        $('#passengerInfoDisplay').html(
+                            '<strong>' + passenger.full_name + '</strong><br>' +
+                            'Passport: ' + passenger.passport_num + '<br>' +
+                            'Nationality: ' + passenger.nationality
+                        );
+                    }
+                },
+                error: function() {
+                    // Silently fail - passenger info not critical
+                }
+            });
+        } else {
+            $('#passengerInfoDisplay').empty();
+        }
+    });
+
+    // Load passenger dropdown if edit modal is present on page load
+    if ($('#passengerDropdown').length) {
+        loadPassengerDropdown();
+    }
+
+    // Preload seat map if edit modal is already open
+    if ($('#editReservationModal').is(':visible') && $('#seatMap').length) {
+        var flightId = $('#editFlightId').val();
+        var reservationId = $('#editReservationId').val();
+        if (flightId && reservationId) {
+            loadSeatMap(flightId, reservationId);
+        }
+    }
 });
