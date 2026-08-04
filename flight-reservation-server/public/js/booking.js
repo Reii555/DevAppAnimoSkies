@@ -602,6 +602,8 @@ $(document).ready(function(){
         
         passengerIds.forEach(function(passengerId) {
 
+            console.log("passengers for reservation ", bookingRef, ":", passengerId);
+
             $.ajax({
 
                 url: "/booking/reserve",
@@ -609,7 +611,6 @@ $(document).ready(function(){
 
                 data: {
 
-                    userId: "6a58cf65318570c1f7029c75",
                     passengerId: passengerId,
                     flightId: flightId,
                     seatNumber: seatNumber,

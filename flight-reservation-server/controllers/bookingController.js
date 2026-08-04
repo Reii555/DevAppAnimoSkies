@@ -82,12 +82,13 @@ exports.getFlightPrice = async (req, res) => {
 exports.bookFlight = async (req, res) => {
 
     console.log(req.body);
+    const userId = req.session.user._id;
 
     try {
 
         const reservation = await Reservation.create({
 
-            userId: req.body.userId,
+            userId: userId,
             passengerId: req.body.passengerId,
             flightId: req.body.flightId,
             seatNumber: req.body.seatNumber,

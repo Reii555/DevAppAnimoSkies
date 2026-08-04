@@ -582,7 +582,7 @@ app.listen(PORT, () => {
         console.log('=== SAMPLE DATA CREATION COMPLETE ===');
 
     } catch (err) {
-        console.log('❌ Error creating sample data:', err.message);
+        console.log('Error creating sample data:', err.message);
         console.log('Stack trace:', err.stack);
     }
 })();
