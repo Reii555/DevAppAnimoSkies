@@ -7,6 +7,30 @@ body {
     min-height: 100vh;
 }
 
+/* Main content container from main-admin.hbs */
+.admin-main-content {
+    margin-left: 260px;
+    padding: 0 30px 30px 30px;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+}
+
+.admin-main-content.sidebar-open {
+    margin-left: 0;
+}
+
+/* Your reservations container - remove any margin */
+.Admin-panel-reservations-main {
+    padding: 0;
+    min-height: auto;
+    /* NO margin-left here */
+}
+
+/* Make sure page heading shows properly */
+.page-heading {
+    margin-top: 0;
+}
+
 /* top bar */
 .top-bar {
     background: white;
@@ -181,15 +205,16 @@ body {
 }
 
 .Admin-panel-reservations-main {
-    margin-left: 260px;
+    /*margin-left: 260px;*/
     padding: 30px 40px 40px;
     min-height: 100vh;
     transition: margin-left 0.3s ease;
 }
 
+/*
 .Admin-panel-reservations-main.sidebar-open {
     margin-left: 0;
-}
+}*/
 
 .Admin-panel-reservations-main h1 {
     font-size: 1.8rem;
