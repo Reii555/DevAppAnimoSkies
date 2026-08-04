@@ -142,8 +142,6 @@ app.use('/admin-flights', adminFlightRoutes);
 app.use('/admin-users', adminUsersRoutes);
 app.use('/admin-reservations', adminReservationsRoutes);
 
-
-
 // Home Page
 app.get('/', (req, res) => {
     res.render('index', { 
@@ -264,7 +262,7 @@ app.listen(PORT, () => {
             console.log('Admin user already exists:', adminUser.email);
         }
 
-        //  Create or get Passenger
+        // Create or get Passenger
         let passenger = await Passenger.findOne({ user_id: testUser._id });
         
         if (!passenger) {
@@ -428,19 +426,15 @@ app.listen(PORT, () => {
             console.log('Seats already exist');
         }
 
+        // ============================================================
         // Create Reservations
-        const lastReservation = await Reservation.findOne({}, {}, { sort: { 'reservation_id': -1 } });
-        let nextId = 1000;
-        if (lastReservation) {
-            nextId = lastReservation.reservation_id + 1;
-        }
-
+        // ============================================================
+        
         const passengerId = passenger._id;
         console.log('Using passengerId:', passengerId);
 
         const reservationData = [
             {
-                reservation_id: nextId,
                 userId: testUser._id,
                 flightId: flight1._id,
                 passengerId: passengerId,
@@ -456,14 +450,12 @@ app.listen(PORT, () => {
                 },
                 extraServicesPrice: 0,
                 booking_ref: 'BK20260720',
-                trip_type: 'oneway',
                 status: 'Confirmed',
                 total_price: 3150,
                 booking_date: new Date('2026-07-10T10:30:00'),
                 specialRequests: 'Window seat preferred'
             },
             {
-                reservation_id: nextId + 1,
                 userId: testUser._id,
                 flightId: flight2._id,
                 passengerId: passengerId,
@@ -479,14 +471,12 @@ app.listen(PORT, () => {
                 },
                 extraServicesPrice: 500,
                 booking_ref: 'BK20260721',
-                trip_type: 'oneway',
                 status: 'Pending',
                 total_price: 3300,
                 booking_date: new Date('2026-07-11T14:20:00'),
                 specialRequests: ''
             },
             {
-                reservation_id: nextId + 2,
                 userId: testUser._id,
                 flightId: flight3._id,
                 passengerId: passengerId,
@@ -502,14 +492,12 @@ app.listen(PORT, () => {
                 },
                 extraServicesPrice: 1200,
                 booking_ref: 'BK20260722',
-                trip_type: 'roundtrip',
                 status: 'Confirmed',
                 total_price: 4800,
                 booking_date: new Date('2026-07-12T09:15:00'),
                 specialRequests: 'Aisle seat preferred'
             },
             {
-                reservation_id: nextId + 3,
                 userId: testUser._id,
                 flightId: flight1._id,
                 passengerId: passengerId,
@@ -525,14 +513,12 @@ app.listen(PORT, () => {
                 },
                 extraServicesPrice: 0,
                 booking_ref: 'BK20260715',
-                trip_type: 'oneway',
                 status: 'Completed',
                 total_price: 3000,
                 booking_date: new Date('2026-07-01T16:45:00'),
                 specialRequests: ''
             },
             {
-                reservation_id: nextId + 4,
                 userId: testUser._id,
                 flightId: flight2._id,
                 passengerId: passengerId,
@@ -548,7 +534,6 @@ app.listen(PORT, () => {
                 },
                 extraServicesPrice: 200,
                 booking_ref: 'BK20260716',
-                trip_type: 'oneway',
                 status: 'Cancelled',
                 total_price: 3200,
                 booking_date: new Date('2026-07-02T11:00:00'),
@@ -556,16 +541,20 @@ app.listen(PORT, () => {
             }
         ];
 
-        // Delete existing reservations first
-        await Reservation.deleteMany({});
-        console.log('Deleted old reservations');
-
+        // Save each reservation
+        let savedCount = 0;
         for (let data of reservationData) {
-            const reservation = new Reservation(data);
-            await reservation.save();
+            try {
+                const reservation = new Reservation(data);
+                await reservation.save();
+                savedCount++;
+                console.log(`Created reservation: ${reservation.booking_ref} (ID: ${reservation.reservation_id})`);
+            } catch (err) {
+                console.log(`Error creating reservation ${data.booking_ref}:`, err.message);
+            }
         }
         
-        console.log('Reservations created with passengerId:', passengerId);
+        console.log(`${savedCount} reservations created successfully!`);
 
         // Update available seats
         await Flight.findByIdAndUpdate(flight1._id, { $inc: { availableSeats: -3 } });
@@ -573,10 +562,12 @@ app.listen(PORT, () => {
         await Flight.findByIdAndUpdate(flight3._id, { $inc: { availableSeats: -1 } });
         console.log('Updated available seats');
 
+        // Verify reservations were created
         const verifyReservations = await Reservation.find({}).populate('passengerId');
         console.log('=== VERIFICATION ===');
+        console.log(`Total reservations in database: ${verifyReservations.length}`);
         for (let r of verifyReservations) {
-            console.log('Reservation:', r.booking_ref, 'Passenger:', r.passengerId ? r.passengerId.full_name : 'NULL');
+            console.log(`- ${r.booking_ref} | Passenger: ${r.passengerId ? r.passengerId.full_name : 'NULL'} | ID: ${r.reservation_id} | Status: ${r.status}`);
         }
 
         console.log('=== SAMPLE DATA CREATION COMPLETE ===');

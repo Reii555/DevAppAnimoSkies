@@ -101,4 +101,20 @@ const reservationSchema = new mongoose.Schema({
   timestamps: true
 });
 
+reservationSchema.pre('save', async function(next) {
+  if (this.isNew) {
+    try {
+      const lastReservation = await this.constructor.findOne({}, {}, { sort: { 'reservation_id': -1 } });
+      if (lastReservation) {
+        this.reservation_id = lastReservation.reservation_id + 1;
+      } else {
+        this.reservation_id = 1000;
+      }
+    } catch (error) {
+      return next(error);
+    }
+  }
+  next();
+});
+
 module.exports = mongoose.model('Reservation', reservationSchema);

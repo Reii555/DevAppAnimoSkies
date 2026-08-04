@@ -1,5 +1,4 @@
 flight-reservation-server/server.js
-flight-reservation-server/server.js
-flight-reservation-server/models/User.js
-.gitignore
-flight-reservation-server/views/my-reservations.hbs
+flight-reservation-server/controllers/reservationController.js
+flight-reservation-server/models/Reservation.js
+flight-reservation-server/routes/reservationRoutes.js
