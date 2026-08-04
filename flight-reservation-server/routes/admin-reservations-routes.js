@@ -29,12 +29,13 @@ router.get('/api', async (req, res) => {
         if (search) {
             query.$or = [
                 { booking_ref: { $regex: search, $options: 'i' } },
-                { 'passengerDetails.fullName': { $regex: search, $options: 'i' } }
+                { 'passengerId.full_name': { $regex: search, $options: 'i' } }
             ];
         }
         
         const reservations = await Reservation.find(query)
             .populate('flightId', 'origin destination flight_number')
+            .populate('passengerId', 'full_name') 
             .sort({ booking_date: -1 })
             .skip(parseInt(skip))
             .limit(parseInt(limit));
@@ -44,7 +45,7 @@ router.get('/api', async (req, res) => {
         const formattedReservations = reservations.map(res => ({
             id: res._id,
             book_ref: res.booking_ref || 'N/A',
-            pass_name: res.passengerDetails?.fullName || 'N/A',
+            pass_name: res.passengerId?.full_name || 'N/A',
             flight_route: res.flightId ? `${res.flightId.origin} → ${res.flightId.destination}` : 'N/A',
             seat_no: res.seatNumber || 'N/A',
             status: res.status || 'Pending',
