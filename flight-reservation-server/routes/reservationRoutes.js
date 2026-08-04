@@ -3,19 +3,17 @@ const router = express.Router();
 const reservationController = require('../controllers/reservationController');
 
 // ============================================================
-// PAGE ROUTES
+// Page Routes
 // ============================================================
-
-router.get('/', reservationController.showMyReservations);
+router.get('/my-reservations', reservationController.showMyReservations);
 
 // ============================================================
-// AJAX FUNCTIONALITY
+// AJAX Routes
 // ============================================================
-
-router.get('/details/:id', reservationController.getReservationDetails);
-router.get('/seats/:flightId/:reservationId?', reservationController.getAvailableSeats);
+router.get('/:id/details', reservationController.getReservationDetails);
+router.get('/:flightId/seats/:reservationId', reservationController.getAvailableSeats);
+router.put('/:id/update-seat', reservationController.updateReservationSeat);
+router.delete('/:id/cancel', reservationController.cancelReservation);
 router.get('/count', reservationController.getReservationCount);
-router.put('/:id/seat', reservationController.updateReservationSeat);
-router.patch('/:id/cancel', reservationController.cancelReservation);
 
 module.exports = router;

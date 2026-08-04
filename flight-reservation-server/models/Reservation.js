@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
 const reservationSchema = new mongoose.Schema({
-  reservation_id: {
+  /* reservation_id: {
     type: Number,
     unique: true,
     index: true
-  },
+  }, */
 
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -110,11 +110,16 @@ const reservationSchema = new mongoose.Schema({
 reservationSchema.pre('save', async function(next) {
   if (this.isNew) {
     try {
-      const lastReservation = await this.constructor.findOne({}, {}, { sort: { 'reservation_id': -1 } });
-      if (lastReservation) {
+      const lastReservation = await this.constructor.findOne(
+        {}, 
+        {}, 
+        { sort: { 'createdAt': -1 } }
+      );
+      
+      if (lastReservation && lastReservation.reservation_id) {
         this.reservation_id = lastReservation.reservation_id + 1;
       } else {
-        this.reservation_id = 1000;
+        this.reservation_id = 1000; // start from 1000 for testing purposes
       }
     } catch (error) {
       return next(error);

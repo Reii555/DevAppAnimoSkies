@@ -12,10 +12,13 @@ exports.showMyReservations = async (req, res) => {
             return res.redirect('/login');
         }
 
+        console.log('Fetching reservations for user:', req.session.user._id);
+
         const page = parseInt(req.query.page) || 1;
-        const limit = 5;
+        const limit = 10; // Changed to 10 for debugging
         const skip = (page - 1) * limit;
 
+        // Get all reservations for this user
         const reservations = await Reservation.find({ userId: req.session.user._id })
             .populate('flightId')
             .populate('passengerId')
@@ -23,9 +26,21 @@ exports.showMyReservations = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
-        const total = await Reservation.countDocuments({ userId: req.session.user._id });
+        console.log('Found reservations:', reservations.length);
 
+        const total = await Reservation.countDocuments({ userId: req.session.user._id });
+        console.log('Total reservations:', total);
+
+        // Format reservations for the view
         const formattedReservations = reservations.map(function(reservation) {
+            // Debug each reservation
+            console.log('🔍 Processing reservation:', {
+                id: reservation._id,
+                booking_ref: reservation.booking_ref,
+                hasFlight: !!reservation.flightId,
+                hasPassenger: !!reservation.passengerId
+            });
+
             var mealPrices = {
                 'Standard': 0,
                 'Vegetarian': 150,
@@ -34,30 +49,45 @@ exports.showMyReservations = async (req, res) => {
                 'Kosher': 300,
                 'Gluten-Free': 200
             };
+            
             var mealPrice = mealPrices[reservation.mealPreference] || 0;
             
-            // Get passenger name 
             var passengerName = 'Unknown Passenger';
             if (reservation.passengerId) {
                 passengerName = reservation.passengerId.full_name || 'Unknown Passenger';
             }
+
+            // Get flight details 
+            var flightDetails = null;
+            if (reservation.flightId) {
+                flightDetails = {
+                    flight_number: reservation.flightId.flight_number || 'N/A',
+                    airline: reservation.flightId.airline || 'N/A',
+                    origin: reservation.flightId.origin || 'N/A',
+                    destination: reservation.flightId.destination || 'N/A',
+                    departureTime: reservation.flightId.departureTime || new Date(),
+                    arrivalTime: reservation.flightId.arrivalTime || new Date()
+                };
+            }
             
             return {
                 _id: reservation._id.toString(),
-                booking_ref: reservation.booking_ref,
+                reservation_id: reservation.reservation_id || 'N/A',
+                booking_ref: reservation.booking_ref || 'N/A',
                 passengerName: passengerName,
-                flight_id: reservation.flightId,
-                seatNumber: reservation.seatNumber,
-                status: reservation.status,
-                total_price: reservation.total_price,
+                flight: flightDetails, // Send full flight object
+                seatNumber: reservation.seatNumber || 'N/A',
+                status: reservation.status || 'Pending',
+                total_price: reservation.total_price || 0,
                 trip_type: reservation.trip_type || 'One-way',
-                meal_id: { 
-                    meal_name: reservation.mealPreference || 'Standard',
-                    meal_price: mealPrice
-                },
-                booking_date: reservation.booking_date
+                mealPreference: reservation.mealPreference || 'Standard',
+                mealPrice: mealPrice,
+                booking_date: reservation.booking_date || new Date(),
+                specialRequests: reservation.specialRequests || ''
             };
         });
+
+        console.log('Formatted reservations:', formattedReservations.length);
 
         res.render('my-reservations', {
             title: 'My Reservations',
@@ -85,7 +115,8 @@ exports.showMyReservations = async (req, res) => {
                 hasPrev: false
             },
             isAuthenticated: true,
-            user: req.session.user
+            user: req.session.user,
+            error: error.message
         });
     }
 };
@@ -104,6 +135,7 @@ exports.getReservationDetails = async (req, res) => {
         }
 
         const reservationId = req.params.id;
+        console.log('🔍 Getting details for reservation:', reservationId);
         
         if (!reservationId || reservationId === 'undefined' || reservationId === 'null') {
             return res.status(400).json({
@@ -124,6 +156,7 @@ exports.getReservationDetails = async (req, res) => {
             });
         }
 
+        // Check ownership
         if (reservation.userId._id.toString() !== req.session.user._id.toString()) {
             return res.status(403).json({
                 success: false,
@@ -179,7 +212,6 @@ exports.getReservationDetails = async (req, res) => {
                 status: reservation.status,
                 total_price: reservation.total_price,
                 passengerDetails: passengerDetails,
-                passengerId: reservation.passengerId,
                 specialRequests: reservation.specialRequests || '',
                 booking_date: reservation.booking_date,
                 trip_type: reservation.trip_type || 'One-way'
@@ -193,6 +225,10 @@ exports.getReservationDetails = async (req, res) => {
         });
     }
 };
+
+// ============================================================
+// Get Available Seats
+// ============================================================
 
 exports.getAvailableSeats = async (req, res) => {
     try {
@@ -285,32 +321,9 @@ exports.getAvailableSeats = async (req, res) => {
     }
 };
 
-exports.getReservationCount = async (req, res) => {
-    try {
-        if (!req.session.user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Not authenticated'
-            });
-        }
-
-        const count = await Reservation.countDocuments({
-            userId: req.session.user._id,
-            status: { $in: ['Pending', 'Confirmed'] }
-        });
-
-        res.json({
-            success: true,
-            data: { count: count }
-        });
-    } catch (error) {
-        console.error('Get reservation count error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching reservation count'
-        });
-    }
-};
+// ============================================================
+// Update Reservation Seat (AJAX)
+// ============================================================
 
 exports.updateReservationSeat = async (req, res) => {
     try {
@@ -465,6 +478,10 @@ exports.updateReservationSeat = async (req, res) => {
     }
 };
 
+// ============================================================
+// Cancel Reservation
+// ============================================================
+
 exports.cancelReservation = async (req, res) => {
     try {
         if (!req.session.user) {
@@ -527,6 +544,37 @@ exports.cancelReservation = async (req, res) => {
         res.status(500).json({
             success: false,
             message: error.message || 'Error cancelling reservation'
+        });
+    }
+};
+
+// ============================================================
+// Get Reservation Count
+// ============================================================
+
+exports.getReservationCount = async (req, res) => {
+    try {
+        if (!req.session.user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Not authenticated'
+            });
+        }
+
+        const count = await Reservation.countDocuments({
+            userId: req.session.user._id,
+            status: { $in: ['Pending', 'Confirmed'] }
+        });
+
+        res.json({
+            success: true,
+            data: { count: count }
+        });
+    } catch (error) {
+        console.error('❌ Get reservation count error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching reservation count'
         });
     }
 };
