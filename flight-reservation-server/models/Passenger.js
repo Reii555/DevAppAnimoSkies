@@ -1,3 +1,4 @@
+// removed savedPassengers - lena
 const mongoose = require("mongoose");
 
 const passengerSchema = new mongoose.Schema({
@@ -85,44 +86,6 @@ const passengerSchema = new mongoose.Schema({
         type: String,
         default: null
     },
-
-    savedPassengers: [{
-        firstName: {
-            type: String,
-            required: true,
-            trim: true
-        },
-        lastName: {
-            type: String,
-            required: true,
-            trim: true
-        },
-        passportNumber: {
-            type: String,
-            required: true,
-            trim: true,
-            uppercase: true,
-            match: [/^[A-Z0-9]{6,10}$/, 'Passport number must be 6-10 alphanumeric characters']
-        },
-        dateOfBirth: {
-            type: Date,
-            required: true
-        },
-        nationality: {
-            type: String,
-            required: true
-        },
-        gender: {
-            type: String,
-            enum: ['Male', 'Female', 'Other', 'Prefer not to say'],
-            required: true
-        },
-        type: {
-            type: String,
-            enum: ['Adult', 'Child', 'Infant'],
-            default: 'Adult'
-        }
-    }],
 
     paymentMethods: [{
         cardType: {
