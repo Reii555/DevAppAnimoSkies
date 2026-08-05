@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const router = express.Router();
 const User = require('../models/User');
 
@@ -37,8 +38,10 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // Check password
-        if (user.password !== password) {
+        // check hashed password
+        const isValid = await user.comparePassword(password);
+
+        if (!isValid) {
             return res.render('login', {
                 title: 'Login',
                 layout: false,

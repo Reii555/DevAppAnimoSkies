@@ -13,7 +13,7 @@ const ExtraService = require('../models/ExtraService');
 
 async function seedDatabase() {
     try {
-        console.log('=== STARTING DATABASE SEEDING ===');
+        console.log('=== POPULATING DATABASE ===');
 
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('MongoDB Connected');
@@ -98,13 +98,14 @@ async function seedDatabase() {
 
         // Create Meals
         const meals = [
-            { meal_name: 'Standard', description: 'Classic in-flight meal', additional_price: 0 },
-            { meal_name: 'Vegetarian', description: 'Fresh stir-fry vegetables', additional_price: 150 },
-            { meal_name: 'Vegan', description: 'Plant-based protein bowl', additional_price: 200 },
-            { meal_name: 'Halal', description: 'Certified Halal chicken', additional_price: 250 },
-            { meal_name: 'Kosher', description: 'Glatt Kosher meal', additional_price: 300 },
-            { meal_name: 'Gluten Free', description: 'Gluten-free pasta', additional_price: 200 }
+            { meal_name: 'Standard', description: 'Classic in-flight meal: Chicken or Pasta with Salad.', additional_price: 0 },
+            { meal_name: 'Vegetarian', description: 'Fresh stir-fry vegetables with quinoa & green salad.', additional_price: 500 },
+            { meal_name: 'Vegan', description: 'Plant-based protein bowl, roasted veggies, dairy-free.', additional_price: 700 },
+            { meal_name: 'Halal', description: 'Certified Halal chicken with saffron rice.', additional_price: 1000 },
+            { meal_name: 'Kosher', description: 'Glatt Kosher meal, pre-packaged under supervision.', additional_price: 1200 },
+            { meal_name: 'Gluten Free', description: 'Gluten-free pasta, fresh vegetables, GF dessert.', additional_price: 1500 }
         ];
+
         await Meal.insertMany(meals);
         console.log('Meals created');
 
@@ -164,12 +165,12 @@ async function seedDatabase() {
         console.log('Flights created');
 
         // Create Seats
-        const seats = [];
-        const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-        
         for (const flight of createdFlights) {
+            const seats = [];
+            const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+
             for (let row = 1; row <= 10; row++) {
-                for (const letter of letters) {
+                for (let letter of letters) {
                     seats.push({
                         flight_id: flight._id,
                         seatNumber: row + letter,
@@ -177,8 +178,8 @@ async function seedDatabase() {
                     });
                 }
             }
+            await Seat.insertMany(seats);
         }
-        await Seat.insertMany(seats);
         console.log('Seats created');
 
         // Create Reservations
@@ -228,20 +229,27 @@ async function seedDatabase() {
                 specialRequests: ''
             }
         ];
-        await Reservation.insertMany(reservations);
+
+        const createdReservations = await Reservation.insertMany(reservations);
         console.log('Reservations created');
 
         // Update occupied seats in Seat model
         await Seat.findOneAndUpdate(
             { flight_id: createdFlights[0]._id, seatNumber: '10A' },
-            { status: 'Occupied' }
+            { 
+                status: 'Occupied',
+                reservation_id: createdReservations[0]._id
+            }
         );
         await Seat.findOneAndUpdate(
             { flight_id: createdFlights[1]._id, seatNumber: '7C' },
-            { status: 'Occupied' }
+            { 
+                status: 'Occupied',
+                reservation_id: createdReservations[1]._id
+            }
         );
 
-        console.log('=== DATABASE SEEDING COMPLETE ===');
+        console.log('=== DATABASE POPULATION SUCCESSFUL ===');
         console.log('Test User: reina.lagos@hotmail.com / password123');
         console.log('Admin User: admin@animoskies.com / admin123');
         console.log('Added 3 passengers for dropdown testing');
