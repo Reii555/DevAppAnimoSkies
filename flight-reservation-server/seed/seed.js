@@ -189,7 +189,7 @@ async function seedDatabase() {
                 userId: testUser._id,
                 flightId: createdFlights[0]._id,
                 passengerId: mainPassenger._id,
-                seatNumber: '12A',
+                seatNumber: '10A',
                 mealPreference: 'Vegetarian',
                 mealPrice: 150,
                 extraServices: {
@@ -233,7 +233,7 @@ async function seedDatabase() {
 
         // Update occupied seats in Seat model
         await Seat.findOneAndUpdate(
-            { flight_id: createdFlights[0]._id, seatNumber: '12A' },
+            { flight_id: createdFlights[0]._id, seatNumber: '10A' },
             { status: 'Occupied' }
         );
         await Seat.findOneAndUpdate(
