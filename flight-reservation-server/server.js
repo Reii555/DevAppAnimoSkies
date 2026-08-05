@@ -130,6 +130,7 @@ const registerRoutes = require('./routes/register-routes');
 const reservationRoutes = require('./routes/reservationRoutes');
 const adminUsersRoutes = require('./routes/admin-users-routes');
 const adminReservationsRoutes = require('./routes/admin-reservations-routes');
+const homeRoutes = require('./routes/homeRoutes');
 
 app.use('/', loginRoutes);
 app.use('/', registerRoutes);
@@ -141,14 +142,7 @@ app.use('/admin-dashboard', adminDashboardRoutes);
 app.use('/admin-flights', adminFlightRoutes);
 app.use('/admin-users', adminUsersRoutes);
 app.use('/admin-reservations', adminReservationsRoutes);
-
-// Home Page
-app.get('/', (req, res) => {
-    res.render('index', { 
-        title: 'Home',
-        loggedIn: req.session.user ? true : false
-    });
-});
+app.use('/', homeRoutes);
 
 // REGISTER ROUTES
 app.get('/register', (req, res) => {

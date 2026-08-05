@@ -56,7 +56,14 @@ router.post('/login', async (req, res) => {
         await user.save();
 
         // Save user to session
-        req.session.user = user;
+        req.session.user = {
+            _id: user._id,
+            email: user.email,
+            role: user.role
+        };
+
+        console.log("Session saved:", req.session.user);
+
         console.log('User logged in:', user.email);
         console.log('   Role:', user.role);
 
