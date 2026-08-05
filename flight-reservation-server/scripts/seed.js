@@ -34,12 +34,12 @@ async function seedDatabase() {
        
         // Create Users
         const hashedPassword = await bcrypt.hash('password123', 10);
-        const adminPassword = await bcrypt.hash('admin123', 10);
+        const adminPassword = await bcrypt.hash('admin123', 10); 
 
         const testUser = new User({
             email: 'reina.lagos@hotmail.com',
             phone: '+639988776655',
-            password: hashedPassword,
+            password: 'password123',
             role: 'customer',
             status: 'active',
             last_login: new Date('2026-07-12')
@@ -49,7 +49,7 @@ async function seedDatabase() {
         const adminUser = new User({
             email: 'admin@animoskies.com',
             phone: '+639123456789',
-            password: adminPassword,
+            password: 'admin123',
             role: 'admin',
             status: 'active',
             created_at: new Date()
