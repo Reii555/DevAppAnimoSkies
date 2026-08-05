@@ -18,21 +18,6 @@ async function isPassportDuplicate(passportNumber, excludeUserId) {
         return true;
     }
     
-    const allPassengers = await Passenger.find({
-        user_id: { $ne: excludeUserId }
-    });
-    
-    for (let p of allPassengers) {
-        if (p.savedPassengers && p.savedPassengers.length > 0) {
-            const found = p.savedPassengers.some(function(sp) {
-                return sp.passportNumber && sp.passportNumber.toUpperCase() === passport;
-            });
-            if (found) {
-                return true;
-            }
-        }
-    }
-    
     return false;
 }
 
@@ -61,7 +46,6 @@ exports.showProfilePage = async (req, res) => {
                 gender: 'Prefer not to say',
                 type: 'Adult',
                 emergency_contact: 'N/A',
-                savedPassengers: [],
                 paymentMethods: [],
                 notificationPreferences: {
                     promotionalOffers: true,
@@ -74,9 +58,6 @@ exports.showProfilePage = async (req, res) => {
         }
 
         // Ensure arrays exist
-        if (!passenger.savedPassengers) {
-            passenger.savedPassengers = [];
-        }
         if (!passenger.paymentMethods) {
             passenger.paymentMethods = [];
         }
@@ -88,6 +69,11 @@ exports.showProfilePage = async (req, res) => {
                 smsAlerts: true
             };
         }
+
+        // Get all passengers for this user 
+        const userPassengers = await Passenger.find({ 
+            user_id: req.session.user._id 
+        }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
 
         // Get user's reservations with passenger data
         let reservations = [];
@@ -118,7 +104,6 @@ exports.showProfilePage = async (req, res) => {
             emergency_contact: passenger.emergency_contact || '',
             profilePicture: passenger.profilePicture || null,
             // Arrays from Passenger
-            savedPassengers: passenger.savedPassengers || [],
             paymentMethods: passenger.paymentMethods || [],
             notificationPreferences: passenger.notificationPreferences || {
                 promotionalOffers: true,
@@ -126,13 +111,16 @@ exports.showProfilePage = async (req, res) => {
                 loyaltyUpdates: true,
                 smsAlerts: true
             },
-            createdAt: passenger.createdAt || new Date()
+            createdAt: passenger.createdAt || new Date(),
+            // All passengers for dropdown
+            userPassengers: userPassengers
         };
 
         res.render('profile', {
             title: 'My Profile',
             user: userData,
             reservations: reservations,
+            userPassengers: userPassengers,
             isAuthenticated: true
         });
     } catch (error) {
@@ -141,6 +129,7 @@ exports.showProfilePage = async (req, res) => {
             title: 'My Profile',
             user: req.session.user || { email: 'Guest' },
             reservations: [],
+            userPassengers: [],
             isAuthenticated: false
         });
     }
@@ -238,7 +227,7 @@ exports.updateProfile = async (req, res) => {
             });
         }
 
-        // Check for duplicate passport number (excluding current user)
+        // Check for duplicate passport number
         const isDuplicate = await isPassportDuplicate(formattedPassport, req.session.user._id);
         if (isDuplicate) {
             return res.status(400).json({
@@ -397,7 +386,6 @@ exports.getProfileData = async (req, res) => {
             type: passenger.type || 'Adult',
             emergency_contact: passenger.emergency_contact || '',
             profilePicture: passenger.profilePicture || null,
-            savedPassengers: passenger.savedPassengers || [],
             paymentMethods: passenger.paymentMethods || []
         };
 
@@ -418,7 +406,64 @@ exports.getProfileData = async (req, res) => {
 };
 
 // ============================================================
-// Saved Passengers using AJAX
+// NEW: Get user's passengers for dropdown
+// ============================================================
+
+exports.getUserPassengers = async (req, res) => {
+    try {
+        if (!req.session.user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Not authenticated'
+            });
+        }
+
+        // Get all passengers belonging to the logged-in user
+        const passengers = await Passenger.find({ 
+            user_id: req.session.user._id 
+        }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
+
+        // If user doesn't have any passengers, create one
+        if (passengers.length === 0) {
+            const newPassenger = new Passenger({
+                user_id: req.session.user._id,
+                full_name: req.session.user.email.split('@')[0],
+                contact_num: req.session.user.phone || 'N/A',
+                passport_num: 'PENDING',
+                nationality: 'Filipino',
+                birth_date: new Date('2000-01-01'),
+                gender: 'Prefer not to say',
+                type: 'Adult',
+                emergency_contact: 'N/A'
+            });
+            await newPassenger.save();
+            
+            // Fetch again
+            const updatedPassengers = await Passenger.find({ 
+                user_id: req.session.user._id 
+            }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
+            
+            return res.json({
+                success: true,
+                data: updatedPassengers
+            });
+        }
+
+        res.json({
+            success: true,
+            data: passengers
+        });
+    } catch (error) {
+        console.error('Get user passengers error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching passengers'
+        });
+    }
+};
+
+// ============================================================
+// Saved Passengers using AJAX (Updated to use user_id)
 // ============================================================
 
 exports.getSavedPassengers = async (req, res) => {
@@ -430,18 +475,14 @@ exports.getSavedPassengers = async (req, res) => {
             });
         }
 
-        const passenger = await Passenger.findOne({ user_id: req.session.user._id });
-        
-        if (!passenger) {
-            return res.status(404).json({
-                success: false,
-                message: 'Passenger profile not found'
-            });
-        }
+        // Get all passengers belonging to the user
+        const passengers = await Passenger.find({ 
+            user_id: req.session.user._id 
+        }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
 
         res.json({
             success: true,
-            data: passenger.savedPassengers || []
+            data: passengers
         });
     } catch (error) {
         console.error('Get saved passengers error:', error);
@@ -461,16 +502,16 @@ exports.addSavedPassenger = async (req, res) => {
             });
         }
 
-        const { firstName, lastName, passportNumber, dateOfBirth, nationality, gender, type } = req.body;
+        const { full_name, contact_num, passport_num, nationality, birth_date, gender, type, emergency_contact } = req.body;
 
-        if (!firstName || !lastName || !passportNumber || !dateOfBirth || !nationality || !gender) {
+        if (!full_name || !passport_num || !birth_date || !gender) {
             return res.status(400).json({
                 success: false,
-                message: 'All passenger fields are required'
+                message: 'Required fields are missing'
             });
         }
 
-        const formattedPassport = passportNumber.toUpperCase().trim();
+        const formattedPassport = passport_num.toUpperCase().trim();
         if (!/^[A-Z0-9]{6,10}$/.test(formattedPassport)) {
             return res.status(400).json({
                 success: false,
@@ -478,6 +519,7 @@ exports.addSavedPassenger = async (req, res) => {
             });
         }
 
+        // Check for duplicate passport
         const isDuplicate = await isPassportDuplicate(formattedPassport, req.session.user._id);
         if (isDuplicate) {
             return res.status(400).json({
@@ -486,55 +528,29 @@ exports.addSavedPassenger = async (req, res) => {
             });
         }
 
-        let passenger = await Passenger.findOne({ user_id: req.session.user._id });
-        
-        if (!passenger) {
-            passenger = new Passenger({
-                user_id: req.session.user._id,
-                full_name: 'User',
-                contact_num: req.session.user.phone || 'N/A',
-                passport_num: 'PENDING',
-                nationality: 'Filipino',
-                birth_date: new Date('2000-01-01'),
-                gender: 'Prefer not to say',
-                type: 'Adult',
-                emergency_contact: 'N/A',
-                savedPassengers: []
-            });
-            await passenger.save();
-        }
-
-        if (!passenger.savedPassengers) {
-            passenger.savedPassengers = [];
-        }
-
-        const ownDuplicate = passenger.savedPassengers.some(function(sp) {
-            return sp.passportNumber && sp.passportNumber.toUpperCase() === formattedPassport;
-        });
-
-        if (ownDuplicate) {
-            return res.status(400).json({
-                success: false,
-                message: 'This passport number is already in your saved passengers list'
-            });
-        }
-
-        passenger.savedPassengers.push({
-            firstName: firstName,
-            lastName: lastName,
-            passportNumber: formattedPassport,
-            dateOfBirth: new Date(dateOfBirth),
-            nationality: nationality,
+        const passenger = new Passenger({
+            user_id: req.session.user._id,
+            full_name: full_name,
+            contact_num: contact_num || req.session.user.phone || 'N/A',
+            passport_num: formattedPassport,
+            nationality: nationality || 'Filipino',
+            birth_date: new Date(birth_date),
             gender: gender,
-            type: type || 'Adult'
+            type: type || 'Adult',
+            emergency_contact: emergency_contact || 'N/A'
         });
 
         await passenger.save();
 
+        // Get updated list
+        const passengers = await Passenger.find({ 
+            user_id: req.session.user._id 
+        }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
+
         res.json({
             success: true,
             message: 'Passenger saved successfully',
-            data: passenger.savedPassengers
+            data: passengers
         });
     } catch (error) {
         console.error('Add saved passenger error:', error);
@@ -554,31 +570,35 @@ exports.removeSavedPassenger = async (req, res) => {
             });
         }
 
-        const passengerIndex = req.params.index;
+        const passengerId = req.params.id;
 
-        const passenger = await Passenger.findOne({ user_id: req.session.user._id });
-        
-        if (!passenger) {
-            return res.status(404).json({
+        // Check if passenger is used in any active reservation
+        const activeReservation = await Reservation.findOne({
+            passengerId: passengerId,
+            status: { $in: ['Pending', 'Confirmed'] }
+        });
+
+        if (activeReservation) {
+            return res.status(400).json({
                 success: false,
-                message: 'Passenger profile not found'
+                message: 'Cannot remove passenger with active reservations'
             });
         }
 
-        if (!passenger.savedPassengers || passengerIndex >= passenger.savedPassengers.length) {
-            return res.status(404).json({
-                success: false,
-                message: 'Passenger not found'
-            });
-        }
+        await Passenger.findOneAndDelete({
+            _id: passengerId,
+            user_id: req.session.user._id
+        });
 
-        passenger.savedPassengers.splice(passengerIndex, 1);
-        await passenger.save();
+        // Get updated list
+        const passengers = await Passenger.find({ 
+            user_id: req.session.user._id 
+        }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
 
         res.json({
             success: true,
             message: 'Passenger removed successfully',
-            data: passenger.savedPassengers
+            data: passengers
         });
     } catch (error) {
         console.error('Remove saved passenger error:', error);
