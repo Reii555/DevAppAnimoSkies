@@ -2,32 +2,24 @@ const authMiddleware = {
     // Check if user is logged in
     isAuthenticated: (req, res, next) => {
         if (!req.session.user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Not authenticated'
-            });
+            return res.redirect('/login');
         }
         next();
+
     },
 
     // Check if user is admin
     isAdmin: (req, res, next) => {
-        if (!req.session.user || req.session.user.role !== 'admin') {
-            return res.status(403).json({
-                success: false,
-                message: 'Access denied. Admin only.'
-            });
+        if (req.session.user.role != "admin") {
+            return res.redirect('/'); 
         }
         next();
     },
 
     // Check if user is customer
     isCustomer: (req, res, next) => {
-        if (!req.session.user || req.session.user.role !== 'customer') {
-            return res.status(403).json({
-                success: false,
-                message: 'Access denied. Customers only.'
-            });
+        if (req.session.user.role != "customer") {
+            return res.redirect('/admin-dashboard'); 
         }
         next();
     },
