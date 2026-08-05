@@ -1,6 +1,7 @@
 let passengerCount = 1;
 let baseFlightPrice = 0;
 let passengerIds = [];
+let seatNums = [];
 
 // FUNCTIONS
 // Passenger Validation
@@ -530,6 +531,21 @@ $(document).ready(function(){
 
         }
 
+        // if seat already exists in the array, remove it. if it doesn't, add it.
+        
+        const seat = $(this).text().trim();
+
+        if (seatNums.includes(seat)) {
+
+            seatNums = seatNums.filter(s => s !== seat); // remove
+
+        } else {
+            seatNums.push(seat); // add
+        }
+
+        console.log("added: ", seat);
+        console.log(seatNums);
+
         updateSelectedSeats();
         updateTotalPrice();
 
@@ -600,9 +616,10 @@ $(document).ready(function(){
         let extraServicesPrice = updateExtraServices();
         let totalPrice = Number($("#totalPrice").text().replace("₱", ""));
         
-        passengerIds.forEach(function(passengerId) {
+        passengerIds.forEach(function(passengerId, index) {
 
             console.log("passengers for reservation ", bookingRef, ":", passengerId);
+            console.log("seats for reservation ", bookingRef, ":", seatNums);
 
             $.ajax({
 
@@ -613,7 +630,7 @@ $(document).ready(function(){
 
                     passengerId: passengerId,
                     flightId: flightId,
-                    seatNumber: seatNumber,
+                    seatNumber: seatNums[index],
                     mealPreference: mealPreference,
                     mealPrice: mealPrice,
 
