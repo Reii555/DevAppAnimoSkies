@@ -444,7 +444,7 @@ $(document).ready(function(){
 
             seatRow += `
                 <div class="col">
-                    <button class="btn ${seatClass} seat">
+                    <button class="btn ${seatClass} text-nowrap seat">
                         ${row}${seats[i]}
                     </button>
                 </div>
@@ -468,7 +468,7 @@ $(document).ready(function(){
 
             seatRow += `
                 <div class="col">
-                    <button class="btn ${seatClass} seat">
+                    <button class="btn ${seatClass} text-nowrap seat">
                         ${row}${seats[i]}
                     </button>
                 </div>
