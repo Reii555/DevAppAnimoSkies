@@ -3,9 +3,9 @@ const router = express.Router();
 const profileController = require('../controllers/profileController');
 const authMiddleware = require('../middleware/auth');
 
-router.get('/', authMiddleware.isAuthenticated, authMiddleware.isCustomer, profileController.showProfilePage);
+router.get('/', authMiddleware.isAuthenticated, authMiddleware.isPassenger, profileController.showProfilePage);
 
-router.get('/edit', authMiddleware.isAuthenticated, authMiddleware.isCustomer, profileController.showEditProfilePage);
+router.get('/edit', authMiddleware.isAuthenticated, authMiddleware.isPassenger, profileController.showEditProfilePage);
 router.put('/update', authMiddleware.isAuthenticated, profileController.updateProfile);
 router.post('/upload-picture', authMiddleware.isAuthenticated, profileController.uploadProfilePicture);
 router.get('/data', authMiddleware.isAuthenticated, profileController.getProfileData);

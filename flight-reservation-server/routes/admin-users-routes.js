@@ -47,7 +47,7 @@ router.get('/api', async (req, res) => {
             created_at: user.created_at || new Date(),
             last_login: user.last_login || 'Never',
             status: user.status || 'active',
-            role: user.role || 'customer'
+            role: user.role || 'passenger'
         }));
         
         res.json({

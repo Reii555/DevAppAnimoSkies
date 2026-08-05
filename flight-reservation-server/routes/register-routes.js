@@ -93,7 +93,7 @@ router.post('/register', async (req, res) => {
             email: email.trim().toLowerCase(),
             phone: phone.trim(),
             password: password,  
-            role: 'customer',
+            role: 'passenger',
             status: 'active',
             created_at: new Date()
         });
@@ -173,7 +173,7 @@ router.post('/signup', async (req, res) => {
             email: email.trim().toLowerCase(),
             phone: phone.trim(),
             password: password,
-            role: 'customer',
+            role: 'passenger',
             status: 'active',
             created_at: new Date()
         });

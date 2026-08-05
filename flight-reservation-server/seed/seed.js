@@ -40,7 +40,7 @@ async function seedDatabase() {
             email: 'reina.lagos@hotmail.com',
             phone: '+639988776655',
             password: 'password123',
-            role: 'customer',
+            role: 'passenger',
             status: 'active',
             last_login: new Date('2026-07-12')
         });

@@ -9,6 +9,6 @@ router.post("/reserve", bookingController.bookFlight);
 router.get("/meals", bookingController.getMeals);
 router.get("/:id/seats", bookingController.getSeats);
 router.get("/:id/price", bookingController.getFlightPrice);
-router.get('/:id', authMiddleware.isAuthenticated, authMiddleware.isCustomer, bookingController.showBookingPage);
+router.get('/:id', authMiddleware.isAuthenticated, authMiddleware.isPassenger, bookingController.showBookingPage);
 
 module.exports = router;

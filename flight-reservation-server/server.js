@@ -163,7 +163,7 @@ app.post('/register', async (req, res) => {
             email: req.body.email,
             phone: req.body.phone,
             password: req.body.password,
-            role: 'customer',
+            role: 'passenger',
             status: 'active'
         });
 
@@ -184,21 +184,6 @@ app.get('/dashboard', (req, res) => {
 
     res.render('dashboard', {
         title: 'Dashboard',
-        user: req.session.user
-    });
-});
-
-app.get('/customer', (req, res) => {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-
-    if (req.session.user.role !== 'customer') {
-        return res.send('Access Denied. Customers only.');
-    }
-
-    res.render('customer', {
-        title: 'Customer Dashboard',
         user: req.session.user
     });
 });

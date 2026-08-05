@@ -4,7 +4,7 @@ const reservationController = require('../controllers/reservationController');
 const authMiddleware = require('../middleware/auth');
 
 
-router.get('/', authMiddleware.isAuthenticated, authMiddleware.isCustomer, reservationController.showMyReservations);
+router.get('/', authMiddleware.isAuthenticated, authMiddleware.isPassenger, reservationController.showMyReservations);
 
 router.get('/details/:id', authMiddleware.isAuthenticated, reservationController.getReservationDetails);
 router.get('/seats/:flightId/:reservationId', authMiddleware.isAuthenticated, reservationController.getSeatMap);

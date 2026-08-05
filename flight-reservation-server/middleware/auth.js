@@ -16,9 +16,9 @@ const authMiddleware = {
         next();
     },
 
-    // Check if user is customer
-    isCustomer: (req, res, next) => {
-        if (req.session.user.role != "customer") {
+    // Check if user is passenger
+    isPassenger: (req, res, next) => {
+        if (req.session.user.role != "passenger") {
             return res.redirect('/admin-dashboard'); 
         }
         next();
