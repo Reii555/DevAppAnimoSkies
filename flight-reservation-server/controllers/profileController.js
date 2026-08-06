@@ -40,6 +40,7 @@ exports.showProfilePage = async (req, res) => {
                 user_id: req.session.user._id,
                 full_name: 'User',
                 contact_num: req.session.user.phone || 'N/A',
+                email: req.session.user.email || 'N/A',
                 passport_num: 'PENDING',
                 nationality: 'Filipino',
                 birth_date: new Date('2000-01-01'),
@@ -95,6 +96,7 @@ exports.showProfilePage = async (req, res) => {
             // Passenger data
             full_name: passenger.full_name || '',
             contact_num: passenger.contact_num || '',
+            email: passenger.email || '',
             passport_num: passenger.passport_num || '',
             nationality: passenger.nationality || 'Filipino',
             birth_date: passenger.birth_date || new Date('2000-01-01'),

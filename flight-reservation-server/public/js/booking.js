@@ -409,7 +409,10 @@ $(document).ready(function(){
         let nationality = passengerCard.find(".nationality").val();
         let birthDate = passengerCard.find(".birthDate").val();
         let gender = passengerCard.find(".gender").val();
-        let emergencyContact = emergencyCard.find(".name_emergency").val().trim() + " | " + emergencyCard.find(".rel_emergency").val() + " | " + emergencyCard.find(".contact_emergency").val().trim();
+        let emergencyContact = emergencyCard.find(".name_emergency").val().trim() + " | " + emergencyCard.find(".rel_emergency").val() + " | " + emergencyCard.find(".email_emergency").val().trim() + " | " + emergencyCard.find(".contact_emergency").val().trim();
+
+        console.log(emergencyCard.find(".email_emergency").val());
+        console.log(emergencyContact);
 
         let existingPassengerId = passengerCard.find(".passengerId").val();
 
