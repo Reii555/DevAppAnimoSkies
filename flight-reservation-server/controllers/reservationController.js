@@ -324,11 +324,29 @@ exports.updateReservationSeat = async (req, res) => {
             updateData.specialRequests = specialRequests;
         }
 
-        const updatedReservation = await Reservation.findByIdAndUpdate(
-            reservationId,
-            updateData,
-            { new: true }
-        ).populate('flightId').populate('passengerId');
+        // Recalculate total price
+        const basePrice = reservation.total_price - 
+            (reservation.mealPrice || 0) - 
+            (reservation.extraServicesPrice || 0);
+        reservation.total_price = basePrice + 
+            (reservation.mealPrice || 0) + 
+            (reservation.extraServicesPrice || 0);
+
+        await reservation.save();
+
+        const user = req.session.user;
+
+        // AUDIT LOG
+        await AuditLog.create({
+            username: user.email,
+            role: user.role,
+            activity: "Update Reservation"
+        });
+
+        // Return updated data
+        const updatedReservation = await Reservation.findById(reservationId)
+            .populate('flightId')
+            .populate('passengerId');
 
         res.json({
             success: true,
@@ -375,7 +393,30 @@ exports.cancelReservation = async (req, res) => {
         reservation.status = 'Cancelled';
         await reservation.save();
 
-        res.json({ success: true, message: 'Reservation cancelled successfully', data: { _id: reservation._id, status: reservation.status } });
+        const user = req.session.user;
+
+        // AUDIT LOG
+        await AuditLog.create({
+            username: user.email,
+            role: user.role,
+            activity: "Cancel Reservation"
+        });
+
+        // Increment available seats 
+        const flight = await Flight.findById(reservation.flightId);
+        if (flight) {
+            flight.availableSeats = flight.availableSeats + 1;
+            await flight.save();
+        }
+
+        res.json({
+            success: true,
+            message: 'Reservation cancelled successfully',
+            data: {
+                _id: reservation._id,
+                status: reservation.status
+            }
+        });
     } catch (error) {
         console.error('Cancel reservation error:', error);
         res.status(500).json({ success: false, message: error.message });
