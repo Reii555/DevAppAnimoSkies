@@ -2,28 +2,14 @@ const express = require("express");
 const router = express.Router();
 
 const adminFlightsController = require("../controllers/flightsController");
+const authMiddleware = require("../middleware/auth");
 
-router.get("/", async (req, res) => {
-    try {
-        if (!req.session.user) {
-            return res.redirect("/login");
-        }
-        if (req.session.user.role !== "admin") {
-            return res.redirect("/?error=Access Denied: Admin access only.");
-        }
-        adminFlightsController.renderFlights(req, res);
-
-    } catch (error) {
-        console.error("Error loading admin-flights:", error);
-        res.status(500).send("Error loading flights: " + error.message);
-    }
-});
-
-router.get("/data", adminFlightsController.getFlightData);
-router.get("/search", adminFlightsController.searchFlights);
-router.get("/check-flight-number", adminFlightsController.checkFlightNumber);
-router.post("/", adminFlightsController.addFlight);
-router.put("/:id", adminFlightsController.updateFlight);
-router.delete("/:id", adminFlightsController.deleteFlight);
+router.get("/", authMiddleware.isAuthenticated, authMiddleware.isAdmin, adminFlightsController.renderFlights);
+router.get("/data", authMiddleware.isAuthenticated, authMiddleware.isAdmin, adminFlightsController.getFlightData);
+router.get("/search", authMiddleware.isAuthenticated, authMiddleware.isAdmin, adminFlightsController.searchFlights);
+router.get("/check-flight-number", authMiddleware.isAuthenticated, authMiddleware.isAdmin, adminFlightsController.checkFlightNumber);
+router.post("/", authMiddleware.isAuthenticated, authMiddleware.isAdmin, adminFlightsController.addFlight);
+router.put("/:id", authMiddleware.isAuthenticated, authMiddleware.isAdmin, adminFlightsController.updateFlight);
+router.delete("/:id", authMiddleware.isAuthenticated, authMiddleware.isAdmin, adminFlightsController.deleteFlight);
 
 module.exports = router;
