@@ -1,7 +1,7 @@
 $(document).ready(function() {
     console.log('✅ Register script loaded');
 
-    // Password validation
+    // password validation
     $('#confirmPassword').on('keyup', function() {
         const password = $('#password').val();
         const confirm = $(this).val();
@@ -13,7 +13,7 @@ $(document).ready(function() {
         }
     });
 
-    // Auto-dismiss alerts
+    // auto-dismiss alerts
     setTimeout(function() {
         $('.alert').fadeOut('slow');
     }, 5000);

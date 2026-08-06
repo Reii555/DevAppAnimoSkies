@@ -3,7 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 
-// GET: Show Registration Page
+// show registration page
 router.get('/register', (req, res) => {
     if (req.session.user) {
         if (req.session.user.role === 'admin') {
@@ -21,7 +21,6 @@ router.get('/register', (req, res) => {
     });
 });
 
-// GET: Alias for /signup
 router.get('/signup', (req, res) => {
     if (req.session.user) {
         if (req.session.user.role === 'admin') {
@@ -188,7 +187,7 @@ router.post('/signup', async (req, res) => {
         await user.save();
         console.log('New user signed up:', user.email);
 
-        // AUDIT LOG
+        // audit log
         await AuditLog.create({
             username: user.email,
             role: user.role,

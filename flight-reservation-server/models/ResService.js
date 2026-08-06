@@ -1,14 +1,13 @@
 const mongoose = require('mongoose');
 
 const resServiceSchema = new mongoose.Schema({
-    reservation_service_id: { // dis d primary keyy
+    reservation_service_id: { 
         type: Number,
         required: true,
         unique: true,
         index: true
     },
 
-    // foreign keyz
     reservation_id: { 
         type: Number,
         ref: 'Reservation',
@@ -21,7 +20,6 @@ const resServiceSchema = new mongoose.Schema({
         required: false
     },
     
-    // the rest, which is js quanity hays
     quantity: {
         type: Number,
         required: [true, 'Quantity is required'],

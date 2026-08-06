@@ -2,10 +2,7 @@ const User = require('../models/User');
 const Passenger = require('../models/Passenger');
 const Reservation = require('../models/Reservation');
 
-// ============================================================
-// HELPER FUNCTION - Check duplicate passport
-// ============================================================
-
+// HELPER FUNCTION : check for duplicate passport
 async function isPassportDuplicate(passportNumber, excludeUserId) {
     const passport = passportNumber.toUpperCase().trim();
     
@@ -21,21 +18,17 @@ async function isPassportDuplicate(passportNumber, excludeUserId) {
     return false;
 }
 
-// ============================================================
-// PAGE ROUTES
-// ============================================================
-
 exports.showProfilePage = async (req, res) => {
     try {
         if (!req.session.user) {
             return res.redirect('/login');
         }
 
-        // Get the main passenger profile 
+        // get the main passenger profile 
         let passenger = await Passenger.findOne({ user_id: req.session.user._id });
         
         if (!passenger) {
-            // Create main passenger if it doesn't exist
+            // create main passenger if it doesn't exist
             passenger = new Passenger({
                 user_id: req.session.user._id,
                 full_name: 'User',
@@ -62,7 +55,6 @@ exports.showProfilePage = async (req, res) => {
             user_id: req.session.user._id 
         }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
 
-        // Ensure arrays exist on the main passenger object
         if (!passenger.paymentMethods) {
             passenger.paymentMethods = [];
         }
@@ -75,7 +67,7 @@ exports.showProfilePage = async (req, res) => {
             };
         }
 
-        // Get user's latest reservations
+        // get user's reservations
         let reservations = [];
         try {
             reservations = await Reservation.find({ userId: req.session.user._id })
@@ -87,13 +79,11 @@ exports.showProfilePage = async (req, res) => {
             console.log('No reservations found');
         }
 
-        // Combine user and passenger data 
         const userData = {
             _id: req.session.user._id,
             email: req.session.user.email,
             phone: req.session.user.phone,
             role: req.session.user.role,
-            // Passenger data
             full_name: passenger.full_name || '',
             contact_num: passenger.contact_num || '',
             email: passenger.email || '',
@@ -104,7 +94,6 @@ exports.showProfilePage = async (req, res) => {
             type: passenger.type || 'Adult',
             emergency_contact: passenger.emergency_contact || '',
             profilePicture: passenger.profilePicture || null,
-            // Arrays from Passenger
             paymentMethods: passenger.paymentMethods || [],
             notificationPreferences: passenger.notificationPreferences || {
                 promotionalOffers: true,
@@ -188,10 +177,7 @@ exports.showEditProfilePage = async (req, res) => {
     }
 };
 
-// ============================================================
-// Profile using AJAX
-// ============================================================
-
+// update profile
 exports.updateProfile = async (req, res) => {
     try {
         if (!req.session.user) {
@@ -226,7 +212,7 @@ exports.updateProfile = async (req, res) => {
             });
         }
 
-        // Check for duplicate passport number
+        // check for duplicate passport number
         const isDuplicate = await isPassportDuplicate(formattedPassport, req.session.user._id);
         if (isDuplicate) {
             return res.status(400).json({
@@ -235,14 +221,14 @@ exports.updateProfile = async (req, res) => {
             });
         }
 
-        // Update User phone
+        // update user phone
         await User.findByIdAndUpdate(
             req.session.user._id,
             { phone: contact_num },
             { new: true }
         );
 
-        // Update Passenger
+        // update passenger
         const updateData = {
             full_name: full_name,
             contact_num: contact_num,
@@ -364,7 +350,7 @@ exports.getProfileData = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(3);
 
-        // Get passenger name from reservation
+        // get passenger name from reservation
         var passengerName = 'Unknown Passenger';
         if (recentReservations.length > 0 && recentReservations[0].passengerId) {
             passengerName = recentReservations[0].passengerId.full_name || 'Unknown Passenger';
@@ -404,10 +390,7 @@ exports.getProfileData = async (req, res) => {
     }
 };
 
-// ============================================================
-// Get user's passengers for dropdown
-// ============================================================
-
+// get user's passengers 
 exports.getUserPassengers = async (req, res) => {
     try {
         if (!req.session.user) {
@@ -417,12 +400,12 @@ exports.getUserPassengers = async (req, res) => {
             });
         }
 
-        // Get all passengers belonging to the logged-in user
+        // get all passengers belonging to the logged-in user
         const passengers = await Passenger.find({ 
             user_id: req.session.user._id 
         }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
 
-        // If user doesn't have any passengers, create one
+        // if user doesn't have any passengers, create one
         if (passengers.length === 0) {
             const newPassenger = new Passenger({
                 user_id: req.session.user._id,
@@ -437,7 +420,7 @@ exports.getUserPassengers = async (req, res) => {
             });
             await newPassenger.save();
             
-            // Fetch again
+            // fetch again
             const updatedPassengers = await Passenger.find({ 
                 user_id: req.session.user._id 
             }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
@@ -461,10 +444,7 @@ exports.getUserPassengers = async (req, res) => {
     }
 };
 
-// ============================================================
-// Saved Passengers using AJAX 
-// ============================================================
-
+// saved passengers 
 exports.getSavedPassengers = async (req, res) => {
     try {
         if (!req.session.user) {
@@ -474,7 +454,7 @@ exports.getSavedPassengers = async (req, res) => {
             });
         }
 
-        // Get all passengers belonging to the user
+        // get all passengers belonging to the user
         const passengers = await Passenger.find({ 
             user_id: req.session.user._id 
         }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
@@ -518,7 +498,7 @@ exports.addSavedPassenger = async (req, res) => {
             });
         }
 
-        // Check for duplicate passport
+        // check for duplicate passport
         const isDuplicate = await isPassportDuplicate(formattedPassport, req.session.user._id);
         if (isDuplicate) {
             return res.status(400).json({
@@ -541,7 +521,7 @@ exports.addSavedPassenger = async (req, res) => {
 
         await passenger.save();
 
-        // Get updated list
+        // get updated list
         const passengers = await Passenger.find({ 
             user_id: req.session.user._id 
         }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
@@ -571,7 +551,7 @@ exports.removeSavedPassenger = async (req, res) => {
 
         const passengerId = req.params.id;
 
-        // Check if passenger is used in any active reservation
+        // check if passenger is used in any active reservation
         const activeReservation = await Reservation.findOne({
             passengerId: passengerId,
             status: { $in: ['Pending', 'Confirmed'] }
@@ -589,7 +569,7 @@ exports.removeSavedPassenger = async (req, res) => {
             user_id: req.session.user._id
         });
 
-        // Get updated list
+        // get updated list
         const passengers = await Passenger.find({ 
             user_id: req.session.user._id 
         }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
@@ -608,10 +588,7 @@ exports.removeSavedPassenger = async (req, res) => {
     }
 };
 
-// ============================================================
-// Payment Methods using AJAX
-// ============================================================
-
+// payment methods 
 exports.getPaymentMethods = async (req, res) => {
     try {
         if (!req.session.user) {
@@ -811,10 +788,7 @@ exports.setDefaultPaymentMethod = async (req, res) => {
     }
 };
 
-// ============================================================
-// Notification Preferences using AJAX
-// ============================================================
-
+// notification preferences 
 exports.updateNotificationPreferences = async (req, res) => {
     try {
         if (!req.session.user) {

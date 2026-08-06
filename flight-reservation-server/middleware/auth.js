@@ -1,5 +1,5 @@
 const authMiddleware = {
-    // Check if user is logged in
+    // check if user is logged in
     isAuthenticated: (req, res, next) => {
         if (!req.session.user) {
             return res.redirect('/login');
@@ -8,7 +8,7 @@ const authMiddleware = {
 
     },
 
-    // Check if user is admin
+    // check if user is admin
     isAdmin: (req, res, next) => {
         if (req.session.user.role != "admin") {
             return res.redirect('/'); 
@@ -16,7 +16,7 @@ const authMiddleware = {
         next();
     },
 
-    // Check if user is passenger
+    // check if user is passenger
     isPassenger: (req, res, next) => {
         if (req.session.user.role != "passenger") {
             return res.redirect('/admin-dashboard'); 
@@ -24,7 +24,7 @@ const authMiddleware = {
         next();
     },
 
-    // Check if user owns the resource
+    // check if user owns the resource
     isResourceOwner: (model) => {
         return async (req, res, next) => {
             try {

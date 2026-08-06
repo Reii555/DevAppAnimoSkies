@@ -5,7 +5,7 @@ const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 
 
-// SHOW LOGIN PAGE
+// show login page
 router.get('/login', (req, res) => {
     if (req.session.user) {
         if (req.session.user.role === 'admin') {
@@ -22,14 +22,14 @@ router.get('/login', (req, res) => {
     });
 });
 
-// PROCESS LOGIN
+// process login
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
         const user = await User.findByEmailWithPassword(email);
 
-        // Check if user exists
+        // check if user exists
         if (!user) {
             return res.render('login', {
                 title: 'Login',
@@ -44,7 +44,7 @@ router.post('/login', async (req, res) => {
         const isValid = await user.comparePassword(password);
 
         if (!isValid) {
-            // AUDIT LOG
+            // audit log
             await AuditLog.create({
                 username: user.email,
                 role: user.role,
@@ -61,11 +61,11 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // Update last_login
+        // update last_login
         user.last_login = new Date();
         await user.save();
 
-        // Save user to session
+        // save user to session
         req.session.user = {
             _id: user._id,
             email: user.email,
@@ -77,7 +77,7 @@ router.post('/login', async (req, res) => {
         console.log('User logged in:', user.email);
         console.log('Role:', user.role);
 
-        // AUDIT LOG
+        // audit log
         await AuditLog.create({
             username: user.email,
             role: user.role,
@@ -85,7 +85,7 @@ router.post('/login', async (req, res) => {
             resource: user.email
         });
 
-        // Redirect based on role
+        // redirect based on role
         if (user.role === 'admin') {
             return res.redirect('/admin-dashboard');
         } else {
@@ -104,12 +104,12 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// LOGOUT ROUTE
+// logout route
 router.get('/logout', async (req, res) => {
 
     const user = req.session.user;
 
-    // AUDIT LOG
+    // audit log
     await AuditLog.create({
         username: user.email,
         role: user.role,

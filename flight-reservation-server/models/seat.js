@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 const seatSchema = new mongoose.Schema({
 
-    // foreign keys
     flight_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Flight',

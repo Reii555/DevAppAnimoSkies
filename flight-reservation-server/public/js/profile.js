@@ -1,8 +1,6 @@
 $(document).ready(function() {
     
-    // ============================================================
-    // TOAST NOTIFICATION FUNCTION
-    // ============================================================
+    // toast notifs
     function showToast(message, type) {
         var toast = $('#toastMsg');
         var toastText = $('#toastText');
@@ -44,9 +42,7 @@ $(document).ready(function() {
         }
     });
 
-    // ============================================================
-    // AVATAR UPLOAD
-    // ============================================================
+    // avatar upload
     $('#uploadBtn').on('click', function(e) {
         e.preventDefault();
         $('#avatarUpload').click();
@@ -105,9 +101,7 @@ $(document).ready(function() {
         reader.readAsDataURL(file);
     });
 
-    // ============================================================
-    // EDIT PROFILE 
-    // ============================================================
+    // edit profile
     $('#editProfileForm').on('submit', function(e) {
         e.preventDefault();
 
@@ -140,7 +134,7 @@ $(document).ready(function() {
         submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...');
 
         $.ajax({
-            url: '/profile/update', // Ensure this matches your routes file
+            url: '/profile/update', 
             method: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify({
@@ -173,17 +167,12 @@ $(document).ready(function() {
         });
     });
 
-    // ============================================================
-    // CANCEL BUTTON
-    // ============================================================
     $('#cancelBtn').on('click', function(e) {
         e.preventDefault();
         window.location.href = '/profile';
     });
 
-    // ============================================================
-    // VALIDATION FOR PHONE NUMBER
-    // ============================================================
+    // validation for phone number
     $('#contact_num').on('blur', function() {
         var phone = $(this).val().trim();
         var phoneRegex = /^\+?[0-9\s\-\(\)]{7,20}$/;
@@ -203,9 +192,7 @@ $(document).ready(function() {
         }
     });
 
-    // ============================================================
-    // ADD SAVED PASSENGERS
-    // ============================================================
+    // add saved passengers
     $('#addPassengerBtn').on('click', function() {
         var firstName = $('#passengerFirstName').val().trim();
         var lastName = $('#passengerLastName').val().trim();
@@ -228,7 +215,6 @@ $(document).ready(function() {
         var submitBtn = $(this);
         submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Adding...');
 
-        // FIX: Send full_name instead of firstName/lastName and passport_num instead of passportNumber
         $.ajax({
             url: '/profile/passengers',
             method: 'POST',
@@ -270,14 +256,11 @@ $(document).ready(function() {
         });
     });
 
-    // ============================================================
-    // REMOVE SAVED PASSENGERS (FIX: Use Passport/ID)
-    // ============================================================
+    // remove saved passengers
     $(document).on('click', '.remove-passenger', function() {
-        var passengerId = $(this).data('id'); // We need to change the HBS to use 'data-id' instead of 'data-index'
+        var passengerId = $(this).data('id'); 
 
         if (!passengerId) {
-            // Fallback attempt to get ID if using the wrong HTML format
             passengerId = $(this).data('passport'); 
         }
 
@@ -288,7 +271,7 @@ $(document).ready(function() {
 
         if (confirm('Are you sure you want to remove this passenger?')) {
             $.ajax({
-                url: '/profile/passengers/' + passengerId, // Sending ID to backend
+                url: '/profile/passengers/' + passengerId, 
                 method: 'DELETE',
                 success: function(response) {
                     if (response.success) {
@@ -307,9 +290,7 @@ $(document).ready(function() {
         }
     });
 
-    // ============================================================
-    // ADD PAYMENT METHODS (FIX: Correct URL)
-    // ============================================================
+    // add payment methods
     $('#addPaymentBtn').on('click', function() {
         var cardType = $('#paymentCardType').val();
         var cardNumber = $('#paymentCardNumber').val().trim();
@@ -341,7 +322,6 @@ $(document).ready(function() {
         var submitBtn = $(this);
         submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Adding...');
 
-        // FIX: Correct URL is /profile/payment-methods
         $.ajax({
             url: '/profile/payment-methods', 
             method: 'POST',
@@ -380,13 +360,10 @@ $(document).ready(function() {
         });
     });
 
-    // ============================================================
-    // REMOVE PAYMENT METHODS (FIX: Correct URL)
-    // ============================================================
+    // remove payment methods
     $(document).on('click', '.remove-payment', function() {
         var index = $(this).data('index');
         if (confirm('Are you sure you want to remove this payment method?')) {
-            // FIX: Correct URL is /profile/payment-methods/ + index
             $.ajax({
                 url: '/profile/payment-methods/' + index,
                 method: 'DELETE',
@@ -407,12 +384,9 @@ $(document).ready(function() {
         }
     });
 
-    // ============================================================
-    // SET DEFAULT PAYMENT (FIX: Correct URL)
-    // ============================================================
+    // set payment default
     $(document).on('click', '.set-default-payment', function() {
         var index = $(this).data('index');
-        // FIX: Correct URL is /profile/payment-methods/ + index + /default
         $.ajax({
             url: '/profile/payment-methods/' + index + '/default',
             method: 'PUT',
@@ -432,9 +406,7 @@ $(document).ready(function() {
         });
     });
 
-    // ============================================================
-    // NOTIFICATION PREFERENCES
-    // ============================================================
+    // notification preferences
     $('.notif-toggle').on('change', function() {
         var key = $(this).data('key');
         var value = $(this).is(':checked');

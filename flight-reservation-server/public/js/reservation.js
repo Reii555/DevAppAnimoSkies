@@ -8,9 +8,7 @@ $(document).ready(function() {
         'Halal': 250, 'Kosher': 300, 'Gluten-Free': 200
     };
 
-    // ============================================================
-    // TOAST NOTIFICATION 
-    // ============================================================
+    // toast notifs
     function showToast(message, type) {
         var toast = $('#toastMsg');
         var toastText = $('#toastText');
@@ -52,9 +50,7 @@ $(document).ready(function() {
         }
     });
 
-    // ============================================================
-    // EXPAND RESERVATION DETAILS
-    // ============================================================
+    // expand reservation deets
     $(document).on('click', '.res-summary', function() {
         var icon = $(this).find('.res-expand-icon');
         var item = $(this).closest('.reservation-item');
@@ -62,9 +58,7 @@ $(document).ready(function() {
         icon.toggleClass('fa-chevron-down fa-chevron-up');
     });
 
-    // ============================================================
-    // VIEW DETAILS MODAL
-    // ============================================================
+    // view reservation modal
     $(document).on('click', '.view-details', function(e) {
         e.preventDefault();
         var reservationId = $(this).data('id');
@@ -147,9 +141,7 @@ $(document).ready(function() {
         });
     });
 
-    // ============================================================
-    // EDIT SEAT MODAL
-    // ============================================================
+    // edit seat modal
     $(document).on('click', '.edit-seat', function(e) {
         e.preventDefault();
         e.stopPropagation(); 
@@ -182,7 +174,7 @@ $(document).ready(function() {
         $('#editSeatGrid').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading seats...</p></div>');
         $('#editFlightInfo').html('<div class="text-center py-2"><i class="fas fa-spinner fa-spin"></i> Loading flight info...</div>');
         
-        // Load flight info
+        // load flight info
         $.ajax({
             url: '/reservations/details/' + reservationId,
             method: 'GET',
@@ -202,7 +194,7 @@ $(document).ready(function() {
                         '<p>Departure: ' + formattedDeparture + '</p>'
                     );
                     
-                    // Load seats & passengers
+                    // load seats & passengers
                     loadSeats(flightData._id, reservationId);
                     loadPassengerDropdown(passengerId);
                 } else {
@@ -217,9 +209,6 @@ $(document).ready(function() {
         $('#editSeatModal').modal('show');
     });
 
-    // ============================================================
-    // LOAD PASSENGER DROPDOWN
-    // ============================================================
     function loadPassengerDropdown(selectedPassengerId) {
         $.ajax({
             url: '/profile/passengers/list',
@@ -244,9 +233,7 @@ $(document).ready(function() {
         });
     }
 
-    // ============================================================
-    // LOAD SEATS 
-    // ============================================================
+    // load seats
     function loadSeats(flightId, reservationId) {
         $.ajax({
             url: '/reservations/seats/' + flightId + '/' + reservationId,
@@ -267,10 +254,10 @@ $(document).ready(function() {
                     for (var row = 1; row <= totalRows; row++) {
                         var $tr = $('<tr></tr>');
                         
-                        // Row number
+                        // row number
                         $tr.append('<td style="font-weight:700;color:#64748b;font-size:12px;">' + row + '</td>');
                         
-                        // Left Seats (A, B, C)
+                        // left seats (A, B, C)
                         for (var col = 0; col < 3; col++) {
                             var seatNumber = row + letters[col];
                             var seatData = data.allSeats.find(s => s.seat === seatNumber);
@@ -328,10 +315,10 @@ $(document).ready(function() {
                             $tr.append($td);
                         }
 
-                        // Aisle column 
+                        // aisle column 
                         $tr.append('<td style="background:#f1f5f9;padding:2px;width:50px;"></td>');
 
-                        // Right seats (D, E, F)
+                        // right seats (D, E, F)
                         for (var col = 3; col < 6; col++) {
                             var seatNumber = row + letters[col];
                             var seatData = data.allSeats.find(s => s.seat === seatNumber);
@@ -407,9 +394,7 @@ $(document).ready(function() {
         });
     }
 
-    // ============================================================
-    // DYNAMIC PRICING
-    // ============================================================
+    // dynamic pricing
     function updateMealPriceDisplay() {
         var price = mealPrices[$('#editMealPreference').val()] || 0;
         $('#mealPriceDisplay').text(price > 0 ? '(+₱' + price + ')' : '(Included)');
@@ -437,9 +422,7 @@ $(document).ready(function() {
     $(document).on('change', '.extra-service-toggle', function() { calculateTotalPrice(); });
     $('#editMealPreference').on('change', function() { updateMealPriceDisplay(); });
 
-    // ============================================================
-    // SAVE CHANGES
-    // ============================================================
+    // save changes
     $('#saveSeatEdit').on('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -515,9 +498,7 @@ $(document).ready(function() {
         });
     });
 
-    // ============================================================
-    // CANCEL RESERVATION
-    // ============================================================
+    // cancel reservation
     var cancelReservationId = null;
     
     $(document).on('click', '.cancel-reservation', function(e) {
@@ -559,9 +540,7 @@ $(document).ready(function() {
         });
     });
 
-    // ============================================================
-    // SEARCH, FILTER, SORT, PAGINATION
-    // ============================================================
+    // search, filter, sort, pagination
     $('#searchInput').on('keyup', function() {
         var searchTerm = $(this).val().toLowerCase();
         $('.reservation-item').each(function() {

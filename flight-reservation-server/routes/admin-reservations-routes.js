@@ -4,7 +4,6 @@ const router = express.Router();
 const adminReservationController = require('../controllers/adminReservationController');
 const authMiddleware = require('../middleware/auth');
 
-//renderin d page
 router.get('/', 
 authMiddleware.isAuthenticated, 
     authMiddleware.isAdmin, 

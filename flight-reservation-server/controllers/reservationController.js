@@ -4,9 +4,6 @@ const Passenger = require('../models/Passenger');
 const Seat = require('../models/Seat'); 
 const AuditLog = require('../models/AuditLog');
 
-// ============================================================
-// Show My Reservations
-// ============================================================
 exports.showMyReservations = async (req, res) => {
     try {
         if (!req.session.user) {
@@ -17,7 +14,7 @@ exports.showMyReservations = async (req, res) => {
         const limit = 5;
         const skip = (page - 1) * limit;
 
-        // Fetch reservations for this user
+        // fetch reservations for this user
         const reservations = await Reservation.find({ userId: req.session.user._id })
             .populate('flightId')
             .populate('passengerId')
@@ -85,9 +82,6 @@ exports.showMyReservations = async (req, res) => {
     }
 };
 
-// ============================================================
-// Get Reservation Details 
-// ============================================================
 exports.getReservationDetails = async (req, res) => {
     try {
         if (!req.session.user) {
@@ -161,9 +155,6 @@ exports.getReservationDetails = async (req, res) => {
     }
 };
 
-// ============================================================
-// Get Available Seats 
-// ============================================================
 exports.getAvailableSeats = async (req, res) => {
     try {
         if (!req.session.user) {
@@ -178,7 +169,7 @@ exports.getAvailableSeats = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Flight not found' });
         }
 
-        // Query active reservations for this flight
+        // query active reservations for this flight
         const query = {
             flightId: flightId,
             status: { $in: ['Pending', 'Confirmed'] }
@@ -232,9 +223,6 @@ exports.getAvailableSeats = async (req, res) => {
     }
 };
 
-// ============================================================
-// Update Reservation Seat 
-// ============================================================
 exports.updateReservationSeat = async (req, res) => {
     try {
         if (!req.session.user) {
@@ -260,7 +248,7 @@ exports.updateReservationSeat = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Reservation cannot be updated in its current status' });
         }
 
-        // Update passenger
+        // update passenger
         if (passengerId && passengerId !== reservation.passengerId.toString()) {
             const passenger = await Passenger.findOne({ _id: passengerId, user_id: req.session.user._id });
             if (!passenger) {
@@ -269,7 +257,7 @@ exports.updateReservationSeat = async (req, res) => {
             reservation.passengerId = passengerId;
         }
 
-        // Update Seat
+        // update Seat
         if (seatNumber && seatNumber !== reservation.seatNumber) {
             const seatRegex = /^[0-9]{1,3}[A-Z]$/;
             if (!seatRegex.test(seatNumber)) {
@@ -278,7 +266,7 @@ exports.updateReservationSeat = async (req, res) => {
 
             console.log(`[DEBUG] Changing seat from ${reservation.seatNumber} to ${seatNumber}`);
 
-            // Check if the seat is already taken
+            // check if the seat is already taken
             const existingReservation = await Reservation.findOne({
                 flightId: reservation.flightId,
                 seatNumber: seatNumber,
@@ -289,21 +277,21 @@ exports.updateReservationSeat = async (req, res) => {
                 return res.status(400).json({ success: false, message: 'This seat is already booked' });
             }
 
-            // Goodbye old seat
+            // goodbye old seat
             const freedSeat = await Seat.findOneAndUpdate(
                 { flight_id: reservation.flightId, seatNumber: reservation.seatNumber },
                 { status: 'Unoccupied', reservation_id: null }
             );
             console.log(`[DEBUG] Freed seat: ${reservation.seatNumber}`, freedSeat ? 'Success' : 'Not Found');
 
-            // Occupies the new seat
+            // occupies the new seat
             const occupiedSeat = await Seat.findOneAndUpdate(
                 { flight_id: reservation.flightId, seatNumber: seatNumber },
                 { status: 'Occupied', reservation_id: reservation._id }
             );
             console.log(`[DEBUG] Occupied seat: ${seatNumber}`, occupiedSeat ? 'Success' : 'Not Found');
 
-            // If the update fails, throw an error
+            // if the update fails, throw an error
             if (!occupiedSeat) {
                 console.error(`[ERROR] Could not find seat ${seatNumber} for flight ${reservation.flightId}`);
                 return res.status(500).json({ success: false, message: 'Failed to occupy new seat in database.' });
@@ -312,7 +300,7 @@ exports.updateReservationSeat = async (req, res) => {
             reservation.seatNumber = seatNumber;
         }
 
-        // Calculate price difference
+        // calculate price difference
         var mealPrices = {
             'Standard': 0, 'Vegetarian': 150, 'Vegan': 200,
             'Halal': 250, 'Kosher': 300, 'Gluten-Free': 200
@@ -322,7 +310,7 @@ exports.updateReservationSeat = async (req, res) => {
         var priceDifference = (newMealPrice - oldMealPrice) + (extraServicesPrice || 0);
         var newTotalPrice = reservation.total_price + priceDifference;
 
-        // Update extras object
+        // update extras object
         var extraServicesObj = {
             checkedBaggage: 0, carryOn: 0, priorityBoarding: false,
             travelInsurance: false, loungeAccess: false
@@ -337,7 +325,7 @@ exports.updateReservationSeat = async (req, res) => {
             });
         }
 
-        // Update reservation
+        // update reservation
         const updateData = {
             seatNumber: seatNumber.toUpperCase(),
             mealPreference: mealPreference || 'Standard',
@@ -358,7 +346,7 @@ exports.updateReservationSeat = async (req, res) => {
 
         console.log(`[DEBUG] Reservation ${reservationId} updated successfully. New price: ${newTotalPrice}`);
 
-        // AUDIT LOG 
+        // audit log 
         const user = req.session.user;
         await AuditLog.create({
             username: user.email,
@@ -401,9 +389,6 @@ exports.updateReservationSeat = async (req, res) => {
     }
 };
 
-// ============================================================
-// Cancel Reservation
-// ============================================================
 exports.cancelReservation = async (req, res) => {
     try {
         if (!req.session.user) {
@@ -427,7 +412,7 @@ exports.cancelReservation = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Reservation cannot be cancelled in its current status' });
         }
 
-        // Free the seat in the seat table
+        // free the seat in the seat table
         await Seat.findOneAndUpdate(
             { flight_id: reservation.flightId, seatNumber: reservation.seatNumber },
             { status: 'Unoccupied', reservation_id: null }
@@ -438,7 +423,7 @@ exports.cancelReservation = async (req, res) => {
 
         const user = req.session.user;
 
-        // AUDIT LOG
+        // audit log
         await AuditLog.create({
             username: user.email,
             role: user.role,
@@ -452,7 +437,7 @@ exports.cancelReservation = async (req, res) => {
             }
         });
 
-        // Increment available seats 
+        // increment available seats 
         const flight = await Flight.findById(reservation.flightId);
         if (flight) {
             flight.availableSeats = flight.availableSeats + 1;
@@ -473,9 +458,6 @@ exports.cancelReservation = async (req, res) => {
     }
 };
 
-// ============================================================
-// Get Reservation Count
-// ============================================================
 exports.getReservationCount = async (req, res) => {
     try {
         if (!req.session.user) {

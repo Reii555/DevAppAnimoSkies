@@ -4,7 +4,7 @@ const app = require("../server");
 const User = require("../models/User");
 const AuditLog = require("../models/AuditLog");
 
-// Mock audit log so it doesn't affect authentication tests
+// mock audit log so it doesn't affect authentication tests
 jest.spyOn(AuditLog, "create").mockResolvedValue({});
 
 describe("Authentication", () => {
@@ -14,7 +14,7 @@ describe("Authentication", () => {
         jest.clearAllMocks();
     });
 
-    // Successful Registration
+    // successful registration
     test("Successful Registration", async () => {
 
         const res = await request(app)
@@ -26,7 +26,7 @@ describe("Authentication", () => {
                 confirmPassword: "password123"
             });
 
-        // Registration renders the login page
+        // registration renders the login page
         expect(res.statusCode).toBe(200);
 
         const savedUser = await User.findOne({
@@ -40,7 +40,7 @@ describe("Authentication", () => {
         expect(AuditLog.create).toHaveBeenCalled();
     });
 
-    // Successful Login
+    // successful login
     test("Successful Login", async () => {
 
         await User.create({
@@ -61,7 +61,7 @@ describe("Authentication", () => {
         expect(res.statusCode).toBe(302);
     });
 
-    // Failed Login
+    // failed login
     test("Failed Login", async () => {
 
         const res = await request(app)
