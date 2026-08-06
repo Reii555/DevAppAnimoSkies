@@ -13,8 +13,7 @@ router.get('/', authMiddleware.isAuthenticated, reservationController.showMyRese
 // ============================================================
 // AJAX FUNCTIONALITY
 // ============================================================
-
-router.get('/details/:id', reservationController.getReservationDetails);
+router.get('/details/:id', authMiddleware.isAuthenticated, reservationController.getReservationDetails);
 router.get('/seats/:flightId/:reservationId?', authMiddleware.isAuthenticated, reservationController.getAvailableSeats);
 router.get('/count', authMiddleware.isAuthenticated, reservationController.getReservationCount);
 router.put('/:id/seat', authMiddleware.isAuthenticated, reservationController.updateReservationSeat);
