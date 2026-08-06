@@ -16,20 +16,6 @@ async function seedDatabase() {
 
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('MongoDB Connected');
-
-        /*
-        // Clear existing data
-        await Promise.all([
-            User.deleteMany({}),
-            Passenger.deleteMany({}),
-            Reservation.deleteMany({}),
-            Flight.deleteMany({}),
-            Seat.deleteMany({}),
-            Meal.deleteMany({}),
-            ExtraService.deleteMany({})
-        ]);
-        console.log('Cleared existing data');
-        */
        
         // Create Users
         const hashedPassword = await bcrypt.hash('password123', 10);

@@ -1,4 +1,3 @@
-// removed savedPassengers - lena
 const mongoose = require("mongoose");
 
 const passengerSchema = new mongoose.Schema({
