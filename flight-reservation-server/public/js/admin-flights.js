@@ -151,7 +151,7 @@ function applyFilters() {
 
         success: function (flights) {
 
-            console.log("Flights:", flights); // ADDED FOR DEBUG !!
+            console.log("Flights:", flights); // for debugging
 
             filteredFlights = flights;
 
@@ -460,7 +460,7 @@ $(document).ready(function () {
             selectedFlight.flight_number
         );
 
-        console.log("Selected flight ID to delete:", selectedFlightId); //debug
+        console.log("Selected flight ID to delete:", selectedFlightId); // for debuggin
     });
 
     //add flight
@@ -615,7 +615,7 @@ $(document).ready(function () {
 
         if (selectedFlightId === null) { return; }
 
-        console.log("Selected flight ID to delete:", selectedFlightId); //debug
+        console.log("Selected flight ID to delete:", selectedFlightId); // for debugging
 
 
         let modal = new bootstrap.Modal(document.getElementById("deleteModal"));
