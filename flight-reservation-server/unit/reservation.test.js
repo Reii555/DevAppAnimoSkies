@@ -117,8 +117,8 @@ describe("Reservation Management", () => {
 
         });
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
 
+        
     });
 
 
