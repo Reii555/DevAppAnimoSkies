@@ -33,16 +33,10 @@ describe("Reservation Management", () => {
         agent = request.agent(app);
 
 
-        const hashedPassword = await bcrypt.hash(
-            "password123",
-            10
-        );
-
-
         user = await User.create({
             email: "passenger@test.com",
             phone: "09123456789",
-            password: hashedPassword,
+            password: "password123",
             role: "passenger",
             status: "active"
         });
