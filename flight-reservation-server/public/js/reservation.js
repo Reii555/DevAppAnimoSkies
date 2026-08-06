@@ -6,17 +6,22 @@ $(document).ready(function() {
     function showToast(message, type) {
         var toast = $('#toastMsg');
         var toastText = $('#toastText');
+        var toastIcon = toast.find('i');
         
         toast.removeClass('success error warning info show');
         
         if (type === 'success') {
             toast.addClass('success');
+            toastIcon.removeClass().addClass('fas fa-check-circle');
         } else if (type === 'error') {
             toast.addClass('error');
+            toastIcon.removeClass().addClass('fas fa-exclamation-circle');
         } else if (type === 'warning') {
             toast.addClass('warning');
+            toastIcon.removeClass().addClass('fas fa-exclamation-triangle');
         } else {
             toast.addClass('info');
+            toastIcon.removeClass().addClass('fas fa-info-circle');
         }
         
         toastText.text(message);
@@ -52,19 +57,12 @@ $(document).ready(function() {
     };
 
     // ============================================================
-    // EXPAND / COLLAPSE 
+    // EXPAND RESERVATION DETAILS
     // ============================================================
-    $(document).on('click', '.res-summary', function(e) {
-        // Prevent expanding if clicking a button or link
-        if ($(e.target).is('button') || $(e.target).closest('button').length || $(e.target).is('a')) {
-            return;
-        }
-        
-        var item = $(this).closest('.reservation-item');
-        var detail = item.find('.res-detail');
+    $(document).on('click', '.res-summary', function() {
         var icon = $(this).find('.res-expand-icon');
-
-        detail.slideToggle(200);
+        var item = $(this).closest('.reservation-item');
+        item.find('.res-detail').slideToggle();
         icon.toggleClass('fa-chevron-down fa-chevron-up');
     });
 
@@ -75,7 +73,7 @@ $(document).ready(function() {
         e.preventDefault();
         var reservationId = $(this).data('id');
         
-        $('#detailsContent').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading...</p></div>');
+        $('#detailsContent').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading details...</p></div>');
         $('#detailsModal').modal('show');
         
         $.ajax({
@@ -125,6 +123,22 @@ $(document).ready(function() {
                         html += '<hr><p><strong>Special Requests:</strong> ' + data.specialRequests + '</p>';
                     }
                     
+                    if (data.passengerDetails) {
+                        html += '<hr><h6>Passenger Details</h6>';
+                        html += '<div class="row">';
+                        html += '  <div class="col-md-6">';
+                        html += '    <p><strong>Full Name:</strong> ' + data.passengerDetails.fullName + '</p>';
+                        html += '    <p><strong>Email:</strong> ' + data.passengerDetails.email + '</p>';
+                        html += '    <p><strong>Contact:</strong> ' + data.passengerDetails.contactNumber + '</p>';
+                        html += '  </div>';
+                        html += '  <div class="col-md-6">';
+                        html += '    <p><strong>Passport:</strong> ' + data.passengerDetails.passportNumber + '</p>';
+                        html += '    <p><strong>Nationality:</strong> ' + data.passengerDetails.nationality + '</p>';
+                        html += '    <p><strong>Gender:</strong> ' + data.passengerDetails.gender + '</p>';
+                        html += '  </div>';
+                        html += '</div>';
+                    }
+                    
                     $('#detailsContent').html(html);
                 } else {
                     showToast(response.message || 'Error loading reservation details', 'error');
@@ -138,30 +152,28 @@ $(document).ready(function() {
     });
 
     // ============================================================
-    // 5. EDIT SEAT MODAL
+    // EDIT SEAT MODAL
     // ============================================================
-    var currentReservationId = null;
     var selectedSeat = null;
-    var currentFlightId = null;
     var currentTotalPrice = 0;
 
     $(document).on('click', '.edit-seat', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         
         var reservationId = $(this).data('id');
         var seat = $(this).data('seat');
         var meal = $(this).data('meal');
         var price = $(this).data('price');
+        var passengerId = $(this).data('passenger');
         
         if (!reservationId) {
             showToast('Invalid reservation ID', 'error');
             return;
         }
         
-        currentReservationId = reservationId;
         selectedSeat = seat || null;
         currentTotalPrice = parseFloat(price) || 0;
-        currentFlightId = null;
         
         $('#editReservationId').val(reservationId);
         $('#editSelectedSeat').text(seat || 'None');
@@ -170,14 +182,14 @@ $(document).ready(function() {
         $('#editCurrentPrice').text('₱' + currentTotalPrice.toFixed(2));
         $('#editTotalPrice').text('₱' + currentTotalPrice.toFixed(2));
         updateMealPriceDisplay();
-        calculateTotalPrice();
-
+        
         $('.extra-service-toggle').prop('checked', false);
+        $('.extra-service-number').val(0);
         
-        $('#editSeatGrid').html('<div class="py-3"><i class="fas fa-spinner fa-spin"></i> Loading seats...</div>');
-        $('#editFlightInfo').html('<p class="mb-1 text-muted small"><i class="fas fa-spinner fa-spin"></i> Loading flight info...</p>');
+        $('#editSeatGrid').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading seats...</p></div>');
+        $('#editFlightInfo').html('<div class="text-center py-2"><i class="fas fa-spinner fa-spin"></i> Loading flight info...</div>');
         
-        // Load Flight Info
+        // 1. Load Flight Info
         $.ajax({
             url: '/reservations/details/' + reservationId,
             method: 'GET',
@@ -185,7 +197,6 @@ $(document).ready(function() {
                 if (detailResponse.success) {
                     var data = detailResponse.data;
                     var flightData = data.flight;
-                    currentFlightId = flightData._id || flightData.id;
                     
                     var departureDate = new Date(flightData.departureTime);
                     var formattedDeparture = departureDate.toLocaleDateString('en-PH', {
@@ -193,17 +204,16 @@ $(document).ready(function() {
                     });
                     
                     $('#editFlightInfo').html(
-                        '<strong>' + flightData.flight_number + '</strong> - ' + flightData.airline + '<br>' +
-                        '<small>' + flightData.origin + ' → ' + flightData.destination + '</small><br>' +
-                        '<small>Departure: ' + formattedDeparture + '</small>'
+                        '<p><strong>' + flightData.flight_number + '</strong> - ' + flightData.airline + '</p>' +
+                        '<p>' + flightData.origin + ' → ' + flightData.destination + '</p>' +
+                        '<p>Departure: ' + formattedDeparture + '</p>'
                     );
                     
-                    if (currentFlightId) {
-                        loadSeats(currentFlightId, reservationId);
-                        loadPassengerDropdown();
-                    } else {
-                        $('#editSeatGrid').html('<p class="text-danger text-center">Could not find flight ID</p>');
-                    }
+                    // 2. Load Seats
+                    loadSeats(flightData._id, reservationId);
+                    
+                    // 3. Load Passenger Dropdown
+                    loadPassengerDropdown(passengerId);
                 } else {
                     showToast(detailResponse.message || 'Error loading flight', 'error');
                 }
@@ -217,88 +227,9 @@ $(document).ready(function() {
     });
 
     // ============================================================
-    // LOAD SEATS 
-    // ============================================================
-    function loadSeats(flightId, reservationId) {
-        $.ajax({
-            url: '/reservations/seats/' + flightId + '/' + reservationId,
-            method: 'GET',
-            success: function(response) {
-                if (response.success) {
-                    var data = response.data;
-                    var seatsHtml = '';
-                    var rows = ['A', 'B', 'C', 'D', 'E', 'F'];
-                    var maxRows = 10;
-                    
-                    seatsHtml += '<div class="seat-map-container">';
-                    
-                    // Legend
-                    seatsHtml += '<div class="seat-legend">';
-                    seatsHtml += '  <span class="legend-item"><span class="legend-color available"></span> Available</span>';
-                    seatsHtml += '  <span class="legend-item"><span class="legend-color occupied"></span> Occupied</span>';
-                    seatsHtml += '  <span class="legend-item"><span class="legend-color selected"></span> Selected</span>';
-                    seatsHtml += '</div>';
-                    
-                    // Seats
-                    for (var row = 1; row <= maxRows; row++) {
-                        seatsHtml += '<div class="seat-row">';
-                        seatsHtml += '<div class="row-label">' + row + '</div>';
-                        
-                        for (var col = 0; col < rows.length; col++) {
-                            var seatNumber = row + rows[col];
-                            var seatData = data.allSeats.find(function(s) { return s.seat === seatNumber; });
-                            
-                            var seatClass = 'seat';
-                            var isClickable = true;
-                            
-                            if (seatData && seatData.isOccupied) {
-                                seatClass += ' occupied';
-                                isClickable = false;
-                            } else if (selectedSeat === seatNumber) {
-                                seatClass += ' selected';
-                            } else {
-                                seatClass += ' available';
-                            }
-                            
-                            seatsHtml += '<div class="' + seatClass + '" data-seat="' + seatNumber + '" ' + (isClickable ? 'onclick="selectSeat(\'' + seatNumber + '\')"' : '') + '>' + seatNumber + '</div>';
-                        }
-                        seatsHtml += '</div>';
-                    }
-                    
-                    seatsHtml += '</div>';
-                    
-                    $('#editSeatGrid').html(seatsHtml);
-                    
-                    if (selectedSeat) {
-                        $('#editSelectedSeat').text(selectedSeat);
-                    }
-                    
-                    var availableCount = data.allSeats.filter(function(s) { return !s.isOccupied; }).length;
-                    $('#availableSeatsCount').text(availableCount + ' seats available');
-                } else {
-                    showToast(response.message || 'Error loading seats', 'error');
-                    $('#editSeatGrid').html('<p class="text-danger text-center">Error loading seats</p>');
-                }
-            },
-            error: function() {
-                showToast('Error loading seats', 'error');
-                $('#editSeatGrid').html('<p class="text-danger text-center">Error loading seats</p>');
-            }
-        });
-    }
-
-    // Seat Selector
-    window.selectSeat = function(seatNumber) {
-        selectedSeat = seatNumber;
-        $('#editSelectedSeat').text(seatNumber);
-        $('.seat').removeClass('selected');
-        $('.seat[data-seat="' + seatNumber + '"]').addClass('selected');
-    };
-
-    // ============================================================
     // LOAD PASSENGER DROPDOWN
     // ============================================================
-    function loadPassengerDropdown() {
+    function loadPassengerDropdown(selectedPassengerId) {
         $.ajax({
             url: '/profile/passengers/list',
             method: 'GET',
@@ -309,6 +240,9 @@ $(document).ready(function() {
                     
                     $.each(response.data, function(index, passenger) {
                         var option = $('<option>').val(passenger._id).text(passenger.full_name + ' (' + passenger.passport_num + ')');
+                        if (selectedPassengerId && passenger._id === selectedPassengerId) {
+                            option.prop('selected', true);
+                        }
                         dropdown.append(option);
                     });
                 }
@@ -320,7 +254,161 @@ $(document).ready(function() {
     }
 
     // ============================================================
-    // PRICE CALCULATOR
+    // LOAD SEATS
+    // ============================================================
+    function loadSeats(flightId, reservationId) {
+        $.ajax({
+            url: '/reservations/seats/' + flightId + '/' + reservationId,
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    var data = response.data;
+                    var seatsHtml = '';
+                    var letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+                    var totalRows = 10;
+                    
+                    seatsHtml += '<div class="table-responsive">';
+                    seatsHtml += '<table class="table table-bordered text-center seat-table">';
+                    seatsHtml += '<thead>';
+                    seatsHtml += '<tr>';
+                    seatsHtml += '<th style="width:40px;">#</th>';
+                    seatsHtml += '<th>A</th><th>B</th><th>C</th>';
+                    seatsHtml += '<th style="width:50px;background:#f1f5f9;color:#94a3b8;font-size:11px;font-weight:700;">AISLE</th>';
+                    seatsHtml += '<th>D</th><th>E</th><th>F</th>';
+                    seatsHtml += '</tr>';
+                    seatsHtml += '</thead>';
+                    seatsHtml += '<tbody>';
+                    
+                    for (var row = 1; row <= totalRows; row++) {
+                        var isPremium = row <= 3;
+                        seatsHtml += '<tr>';
+                        seatsHtml += '<td style="font-weight:700;color:#64748b;font-size:12px;">' + row + '</td>';
+                        
+                        for (var col = 0; col < 3; col++) {
+                            var seatNumber = row + letters[col];
+                            var seatData = data.allSeats.find(s => s.seat === seatNumber);
+                            
+                            var seatClass = '';
+                            var isDisabled = '';
+                            
+                            if (seatData) {
+                                if (seatData.isBooked && !seatData.isCurrent) {
+                                    seatClass = 'btn-secondary';
+                                    isDisabled = 'disabled';
+                                } else if (seatData.isCurrent) {
+                                    seatClass = 'btn-warning text-dark';
+                                    if (selectedSeat === null) selectedSeat = seatNumber;
+                                } else if (selectedSeat === seatNumber) {
+                                    seatClass = 'btn-primary';
+                                } else if (isPremium) {
+                                    seatClass = 'btn-outline-warning premium';
+                                } else {
+                                    seatClass = 'btn-outline-success';
+                                }
+                            } else {
+                                seatClass = isPremium ? 'btn-outline-warning premium' : 'btn-outline-success';
+                            }
+                            
+                            seatsHtml += '<td style="padding:4px;">';
+                            seatsHtml += '<button class="btn btn-sm ' + seatClass + ' w-100 seat-btn" data-seat="' + seatNumber + '" ' + isDisabled + ' style="font-size:11px;padding:4px 0;min-width:35px;">' + seatNumber + '</button>';
+                            seatsHtml += '</td>';
+                        }
+                        
+                        seatsHtml += '<td style="background:#f1f5f9;padding:2px;width:50px;"></td>';
+                        
+                        for (var col = 3; col < 6; col++) {
+                            var seatNumber = row + letters[col];
+                            var seatData = data.allSeats.find(s => s.seat === seatNumber);
+                            
+                            var seatClass = '';
+                            var isDisabled = '';
+                            
+                            if (seatData) {
+                                if (seatData.isBooked && !seatData.isCurrent) {
+                                    seatClass = 'btn-secondary';
+                                    isDisabled = 'disabled';
+                                } else if (seatData.isCurrent) {
+                                    seatClass = 'btn-warning text-dark';
+                                    if (selectedSeat === null) selectedSeat = seatNumber;
+                                } else if (selectedSeat === seatNumber) {
+                                    seatClass = 'btn-primary';
+                                } else if (isPremium) {
+                                    seatClass = 'btn-outline-warning premium';
+                                } else {
+                                    seatClass = 'btn-outline-success';
+                                }
+                            } else {
+                                seatClass = isPremium ? 'btn-outline-warning premium' : 'btn-outline-success';
+                            }
+                            
+                            seatsHtml += '<td style="padding:4px;">';
+                            seatsHtml += '<button class="btn btn-sm ' + seatClass + ' w-100 seat-btn" data-seat="' + seatNumber + '" ' + isDisabled + ' style="font-size:11px;padding:4px 0;min-width:35px;">' + seatNumber + '</button>';
+                            seatsHtml += '</td>';
+                        }
+                        
+                        seatsHtml += '</tr>';
+                    }
+                    
+                    seatsHtml += '</tbody>';
+                    seatsHtml += '</table>';
+                    seatsHtml += '</div>';
+                    
+                    seatsHtml += '<div class="d-flex gap-3 justify-content-center flex-wrap mt-3">';
+                    seatsHtml += '  <span class="badge bg-success">Available</span>';
+                    seatsHtml += '  <span class="badge bg-secondary">Booked</span>';
+                    seatsHtml += '  <span class="badge bg-warning text-dark">Your Current</span>';
+                    seatsHtml += '  <span class="badge bg-primary">Selected</span>';
+                    seatsHtml += '  <span class="badge bg-warning text-dark" style="background:#ffc107 !important;">Premium</span>';
+                    seatsHtml += '</div>';
+                    
+                    $('#editSeatGrid').html(seatsHtml);
+                    
+                    if (selectedSeat) {
+                        $('#editSelectedSeat').text(selectedSeat);
+                    }
+                    
+                    $('#availableSeatsCount').text(data.availableSeats + ' seats available');
+                    
+                    $(document).off('click', '.seat-btn:not(:disabled)');
+                    $(document).on('click', '.seat-btn:not(:disabled)', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+
+                        var seat = $(this).data('seat');
+                        var isPremium = parseInt(seat) <= 3;
+                        
+                        if ($(this).hasClass('btn-primary')) {
+                            $(this).removeClass('btn-primary').addClass(isPremium ? 'btn-outline-warning premium' : 'btn-outline-success');
+                            selectedSeat = null;
+                            $('#editSelectedSeat').text('None');
+                            return;
+                        }
+                        
+                        $('.seat-btn').not(this).each(function() {
+                            var s = $(this).data('seat');
+                            var prem = parseInt(s) <= 3;
+                            if ($(this).hasClass('btn-primary')) {
+                                $(this).removeClass('btn-primary').addClass(prem ? 'btn-outline-warning premium' : 'btn-outline-success');
+                            }
+                        });
+                        
+                        $(this).removeClass('btn-outline-success btn-outline-warning premium').addClass('btn-primary');
+                        selectedSeat = seat;
+                        $('#editSelectedSeat').text(seat);
+                    });
+                    
+                } else {
+                    showToast(response.message || 'Error loading seats', 'error');
+                }
+            },
+            error: function() {
+                showToast('Error loading seats', 'error');
+            }
+        });
+    }
+
+    // ============================================================
+    // DYNAMIC PRICING (UPDATES THE MODAL PRICE ONLY)
     // ============================================================
     function updateMealPriceDisplay() {
         var price = mealPrices[$('#editMealPreference').val()] || 0;
@@ -332,6 +420,11 @@ $(document).ready(function() {
         var mealPrice = mealPrices[$('#editMealPreference').val()] || 0;
         var extrasTotal = 0;
         
+        $('.extra-service-number').each(function() {
+            var quantity = parseInt($(this).val()) || 0;
+            var pricePerUnit = parseFloat($(this).data('price')) || 0;
+            extrasTotal += (quantity * pricePerUnit);
+        });
         $('.extra-service-toggle:checked').each(function() {
             extrasTotal += parseFloat($(this).data('price')) || 0;
         });
@@ -340,12 +433,14 @@ $(document).ready(function() {
         $('#editTotalPrice').text('₱' + newTotal.toFixed(2));
     }
 
-    $('#editMealPreference').on('change', function() {
-        updateMealPriceDisplay();
+    $(document).on('input', '.extra-service-number', function() {
+        calculateTotalPrice();
     });
-    
     $(document).on('change', '.extra-service-toggle', function() {
         calculateTotalPrice();
+    });
+    $('#editMealPreference').on('change', function() {
+        updateMealPriceDisplay();
     });
 
     // ============================================================
@@ -361,10 +456,20 @@ $(document).ready(function() {
         
         var selectedExtras = [];
         var extrasTotal = 0;
+        
+        $('.extra-service-number').each(function() {
+            var quantity = parseInt($(this).val()) || 0;
+            if (quantity > 0) {
+                var name = $(this).data('name');
+                var price = parseFloat($(this).data('price')) || 0;
+                selectedExtras.push({ name: name, quantity: quantity, price: price });
+                extrasTotal += (quantity * price);
+            }
+        });
         $('.extra-service-toggle:checked').each(function() {
             var name = $(this).data('name');
             var price = parseFloat($(this).data('price')) || 0;
-            selectedExtras.push({ name: name, price: price });
+            selectedExtras.push({ name: name, quantity: 1, price: price });
             extrasTotal += price;
         });
         
@@ -381,7 +486,7 @@ $(document).ready(function() {
         submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...');
         
         $.ajax({
-            url: '/reservations/' + reservationId,
+            url: '/reservations/' + reservationId + '/seat',
             method: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify({
@@ -441,8 +546,8 @@ $(document).ready(function() {
             method: 'PATCH',
             success: function(response) {
                 if (response.success) {
-                    showToast('Reservation cancelled successfully!', 'success');
                     $('#cancelModal').modal('hide');
+                    showToast('Reservation cancelled successfully!', 'success');
                     setTimeout(function() { location.reload(); }, 1000);
                 } else {
                     showToast(response.message || 'Error cancelling reservation', 'error');
@@ -457,7 +562,7 @@ $(document).ready(function() {
     });
 
     // ============================================================
-    // SEARCH, FILTER, SORT
+    // SEARCH, FILTER, SORT, PAGINATION
     // ============================================================
     $('#searchInput').on('keyup', function() {
         var searchTerm = $(this).val().toLowerCase();
@@ -516,22 +621,32 @@ $(document).ready(function() {
         });
     });
 
-    // ============================================================
-    // PAGINATION & BACK BUTTON
-    // ============================================================
-    $('#prevPage').on('click', function() {
-        if (!$(this).prop('disabled')) {
-            var text = $('.active-page').text();
-            var current = parseInt(text.split('/')[0].trim());
-            window.location.href = '/reservations?page=' + (current - 1);
+    $('#prevPage').on('click', function(e) {
+        e.preventDefault();
+        var text = $('.active-page').text();
+        if (text) {
+            var parts = text.split('/');
+            if (parts.length === 2) {
+                var current = parseInt(parts[0].trim());
+                if (current > 1) {
+                    window.location.href = '/reservations?page=' + (current - 1);
+                }
+            }
         }
     });
     
-    $('#nextPage').on('click', function() {
-        if (!$(this).prop('disabled')) {
-            var text = $('.active-page').text();
-            var current = parseInt(text.split('/')[0].trim());
-            window.location.href = '/reservations?page=' + (current + 1);
+    $('#nextPage').on('click', function(e) {
+        e.preventDefault();
+        var text = $('.active-page').text();
+        if (text) {
+            var parts = text.split('/');
+            if (parts.length === 2) {
+                var current = parseInt(parts[0].trim());
+                var total = parseInt(parts[1].trim());
+                if (current < total) {
+                    window.location.href = '/reservations?page=' + (current + 1);
+                }
+            }
         }
     });
 

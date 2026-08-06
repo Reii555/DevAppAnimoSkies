@@ -31,11 +31,11 @@ exports.showProfilePage = async (req, res) => {
             return res.redirect('/login');
         }
 
-        // Get the passenger data for the logged-in user
+        // Get the main passenger profile 
         let passenger = await Passenger.findOne({ user_id: req.session.user._id });
         
         if (!passenger) {
-            // Create passenger if doesn't exist
+            // Create main passenger if it doesn't exist
             passenger = new Passenger({
                 user_id: req.session.user._id,
                 full_name: 'User',
@@ -57,7 +57,11 @@ exports.showProfilePage = async (req, res) => {
             await passenger.save();
         }
 
-        // Ensure arrays exist
+        const savedPassengers = await Passenger.find({ 
+            user_id: req.session.user._id 
+        }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
+
+        // Ensure arrays exist on the main passenger object
         if (!passenger.paymentMethods) {
             passenger.paymentMethods = [];
         }
@@ -70,12 +74,7 @@ exports.showProfilePage = async (req, res) => {
             };
         }
 
-        // Get all passengers for this user 
-        const userPassengers = await Passenger.find({ 
-            user_id: req.session.user._id 
-        }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
-
-        // Get user's reservations with passenger data
+        // Get user's latest reservations
         let reservations = [];
         try {
             reservations = await Reservation.find({ userId: req.session.user._id })
@@ -87,7 +86,7 @@ exports.showProfilePage = async (req, res) => {
             console.log('No reservations found');
         }
 
-        // Combine user and passenger data for the view
+        // Combine user and passenger data 
         const userData = {
             _id: req.session.user._id,
             email: req.session.user.email,
@@ -112,15 +111,13 @@ exports.showProfilePage = async (req, res) => {
                 smsAlerts: true
             },
             createdAt: passenger.createdAt || new Date(),
-            // All passengers for dropdown
-            userPassengers: userPassengers
+            savedPassengers: savedPassengers
         };
 
         res.render('profile', {
             title: 'My Profile',
             user: userData,
             reservations: reservations,
-            userPassengers: userPassengers,
             isAuthenticated: true
         });
     } catch (error) {
@@ -129,7 +126,7 @@ exports.showProfilePage = async (req, res) => {
             title: 'My Profile',
             user: req.session.user || { email: 'Guest' },
             reservations: [],
-            userPassengers: [],
+            savedPassengers: [],
             isAuthenticated: false
         });
     }
@@ -406,7 +403,7 @@ exports.getProfileData = async (req, res) => {
 };
 
 // ============================================================
-// NEW: Get user's passengers for dropdown
+// Get user's passengers for dropdown
 // ============================================================
 
 exports.getUserPassengers = async (req, res) => {
@@ -463,7 +460,7 @@ exports.getUserPassengers = async (req, res) => {
 };
 
 // ============================================================
-// Saved Passengers using AJAX (Updated to use user_id)
+// Saved Passengers using AJAX 
 // ============================================================
 
 exports.getSavedPassengers = async (req, res) => {

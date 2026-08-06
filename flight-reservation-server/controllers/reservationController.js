@@ -1,18 +1,23 @@
 const Reservation = require('../models/Reservation');
 const Flight = require('../models/Flight');
 const Passenger = require('../models/Passenger');
+const Seat = require('../models/Seat'); 
 const AuditLog = require('../models/AuditLog');
 
 // ============================================================
-// PAGE ROUTES
+// Show My Reservations
 // ============================================================
-
 exports.showMyReservations = async (req, res) => {
     try {
+        if (!req.session.user) {
+            return res.redirect('/login');
+        }
+
         const page = parseInt(req.query.page) || 1;
         const limit = 5;
         const skip = (page - 1) * limit;
 
+        // Fetch reservations for this user
         const reservations = await Reservation.find({ userId: req.session.user._id })
             .populate('flightId')
             .populate('passengerId')
@@ -22,24 +27,15 @@ exports.showMyReservations = async (req, res) => {
 
         const total = await Reservation.countDocuments({ userId: req.session.user._id });
 
-        // Get all passengers for the user
-        const userPassengers = await Passenger.find({ 
-            user_id: req.session.user._id 
-        }).select('_id full_name passport_num nationality birth_date gender type emergency_contact');
-
+        // Format data 
         const formattedReservations = reservations.map(function(reservation) {
             var mealPrices = {
-                'Standard': 0,
-                'Vegetarian': 150,
-                'Vegan': 200,
-                'Halal': 250,
-                'Kosher': 300,
-                'Gluten-Free': 200
+                'Standard': 0, 'Vegetarian': 150, 'Vegan': 200,
+                'Halal': 250, 'Kosher': 300, 'Gluten-Free': 200
             };
             var mealPrice = mealPrices[reservation.mealPreference] || 0;
             
-            var passengerName = reservation.passengerId ? 
-                reservation.passengerId.full_name : 'Unknown Passenger';
+            var passengerName = reservation.passengerId ? reservation.passengerId.full_name : 'Unknown Passenger';
             
             return {
                 _id: reservation._id.toString(),
@@ -55,8 +51,7 @@ exports.showMyReservations = async (req, res) => {
                     meal_name: reservation.mealPreference || 'Standard',
                     meal_price: mealPrice
                 },
-                booking_date: reservation.booking_date,
-                flight: reservation.flightId
+                booking_date: reservation.booking_date
             };
         });
 
@@ -70,7 +65,6 @@ exports.showMyReservations = async (req, res) => {
                 hasNext: page < Math.ceil(total / limit),
                 hasPrev: page > 1
             },
-            userPassengers: userPassengers, 
             isAuthenticated: true,
             user: req.session.user
         });
@@ -86,7 +80,6 @@ exports.showMyReservations = async (req, res) => {
                 hasNext: false,
                 hasPrev: false
             },
-            userPassengers: [],
             isAuthenticated: true,
             user: req.session.user
         });
@@ -94,11 +87,14 @@ exports.showMyReservations = async (req, res) => {
 };
 
 // ============================================================
-// GET RESERVATION DETAILS
+// Get Reservation Details 
 // ============================================================
-
 exports.getReservationDetails = async (req, res) => {
     try {
+        if (!req.session.user) {
+            return res.status(401).json({ success: false, message: 'Not authenticated' });
+        }
+
         const reservationId = req.params.id;
         
         const reservation = await Reservation.findById(reservationId)
@@ -107,42 +103,31 @@ exports.getReservationDetails = async (req, res) => {
             .populate('passengerId');
 
         if (!reservation) {
-            return res.status(404).json({
-                success: false,
-                message: 'Reservation not found'
-            });
+            return res.status(404).json({ success: false, message: 'Reservation not found' });
         }
 
+        // Security check
         if (reservation.userId._id.toString() !== req.session.user._id.toString()) {
-            return res.status(403).json({
-                success: false,
-                message: 'Access denied'
-            });
+            return res.status(403).json({ success: false, message: 'Access denied' });
         }
 
         var mealPrices = {
-            'Standard': 0,
-            'Vegetarian': 150,
-            'Vegan': 200,
-            'Halal': 250,
-            'Kosher': 300,
-            'Gluten-Free': 200
+            'Standard': 0, 'Vegetarian': 150, 'Vegan': 200,
+            'Halal': 250, 'Kosher': 300, 'Gluten-Free': 200
         };
         var mealPrice = mealPrices[reservation.mealPreference] || 0;
 
-        var passengerName = 'Unknown Passenger';
+        var passengerName = reservation.passengerId ? reservation.passengerId.full_name : 'Unknown Passenger';
         var passengerDetails = {};
         if (reservation.passengerId) {
-            passengerName = reservation.passengerId.full_name || 'Unknown Passenger';
             passengerDetails = {
                 fullName: reservation.passengerId.full_name || '',
+                email: reservation.userId ? reservation.userId.email : 'No email provided',
                 contactNumber: reservation.passengerId.contact_num || '',
                 passportNumber: reservation.passengerId.passport_num || '',
                 nationality: reservation.passengerId.nationality || '',
                 dateOfBirth: reservation.passengerId.birth_date || '',
-                gender: reservation.passengerId.gender || '',
-                type: reservation.passengerId.type || 'Adult',
-                emergencyContact: reservation.passengerId.emergency_contact || ''
+                gender: reservation.passengerId.gender || ''
             };
         }
 
@@ -174,65 +159,110 @@ exports.getReservationDetails = async (req, res) => {
         });
     } catch (error) {
         console.error('Get reservation details error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Error fetching reservation details'
-        });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
 // ============================================================
-// UPDATE RESERVATION
+// Get Available Seats 
 // ============================================================
-
-exports.updateReservation = async (req, res) => {
+exports.getAvailableSeats = async (req, res) => {
     try {
+        if (!req.session.user) {
+            return res.status(401).json({ success: false, message: 'Not authenticated' });
+        }
+
+        const flightId = req.params.flightId;
+        const reservationId = req.params.reservationId;
+
+        const flight = await Flight.findById(flightId);
+        if (!flight) {
+            return res.status(404).json({ success: false, message: 'Flight not found' });
+        }
+
+        // Query active reservations for this flight
+        const query = {
+            flightId: flightId,
+            status: { $in: ['Pending', 'Confirmed'] }
+        };
+        
+        if (reservationId && reservationId !== 'undefined' && reservationId !== 'null') {
+            query._id = { $ne: reservationId };
+        }
+
+        const bookedReservations = await Reservation.find(query);
+        const bookedSeats = bookedReservations.map(r => r.seatNumber);
+
+        let currentSeat = null;
+        if (reservationId && reservationId !== 'undefined' && reservationId !== 'null') {
+            const currentReservation = await Reservation.findById(reservationId);
+            if (currentReservation) {
+                currentSeat = currentReservation.seatNumber;
+            }
+        }
+
+        // Generate grid
+        const allSeats = [];
+        const rows = ['A', 'B', 'C', 'D', 'E', 'F'];
+        const maxRows = 10;
+
+        for (let row = 1; row <= maxRows; row++) {
+            for (let col = 0; col < rows.length; col++) {
+                const seatNumber = row + rows[col];
+                allSeats.push({
+                    seat: seatNumber,
+                    isBooked: bookedSeats.includes(seatNumber),
+                    isCurrent: seatNumber === currentSeat
+                });
+            }
+        }
+
+        const availableCount = allSeats.filter(s => !s.isBooked || s.isCurrent).length;
+
+        res.json({
+            success: true,
+            data: {
+                availableSeats: availableCount,
+                totalSeats: allSeats.length,
+                currentSeat: currentSeat,
+                allSeats: allSeats
+            }
+        });
+    } catch (error) {
+        console.error('Get available seats error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// ============================================================
+// Update Reservation Seat
+// ============================================================
+exports.updateReservationSeat = async (req, res) => {
+    try {
+
         const reservationId = req.params.id;
-        const { 
-            passengerId, 
-            seatNumber, 
-            mealPreference, 
-            specialRequests, 
-            extraServices, 
-            extraServicesPrice 
-        } = req.body;
+        const { passengerId, seatNumber, mealPreference, specialRequests, extraServices, extraServicesPrice } = req.body;
 
         const reservation = await Reservation.findById(reservationId);
         if (!reservation) {
-            return res.status(404).json({
-                success: false,
-                message: 'Reservation not found'
-            });
+            return res.status(404).json({ success: false, message: 'Reservation not found' });
         }
 
         const oldReservation = await Reservation.findById(reservationId);
 
+        // Security
         if (reservation.userId.toString() !== req.session.user._id.toString()) {
-            return res.status(403).json({
-                success: false,
-                message: 'Access denied'
-            });
+            return res.status(403).json({ success: false, message: 'Access denied' });
         }
-
         if (reservation.status !== 'Pending' && reservation.status !== 'Confirmed') {
-            return res.status(400).json({
-                success: false,
-                message: 'Reservation cannot be updated in its current status'
-            });
+            return res.status(400).json({ success: false, message: 'Reservation cannot be updated in its current status' });
         }
 
         // Update passenger
         if (passengerId && passengerId !== reservation.passengerId.toString()) {
-            const passenger = await Passenger.findOne({
-                _id: passengerId,
-                user_id: req.session.user._id
-            });
-
+            const passenger = await Passenger.findOne({ _id: passengerId, user_id: req.session.user._id });
             if (!passenger) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid passenger'
-                });
+                return res.status(400).json({ success: false, message: 'Invalid passenger' });
             }
             reservation.passengerId = passengerId;
         }
@@ -241,46 +271,57 @@ exports.updateReservation = async (req, res) => {
         if (seatNumber && seatNumber !== reservation.seatNumber) {
             const seatRegex = /^[0-9]{1,3}[A-Z]$/;
             if (!seatRegex.test(seatNumber)) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid seat format. Must be number followed by letter (e.g., 12A)'
-                });
+                return res.status(400).json({ success: false, message: 'Invalid seat format. Must be number followed by letter' });
             }
 
-            // Check if seat is occupied 
-            const occupiedSeats = await getOccupiedSeats(reservation.flightId, reservationId);
-            if (occupiedSeats.includes(seatNumber)) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'This seat is already booked'
-                });
+            const existingReservation = await Reservation.findOne({
+                flightId: reservation.flightId,
+                seatNumber: seatNumber,
+                status: { $in: ['Pending', 'Confirmed'] },
+                _id: { $ne: reservationId }
+            });
+            if (existingReservation) {
+                return res.status(400).json({ success: false, message: 'This seat is already booked' });
             }
             reservation.seatNumber = seatNumber;
         }
 
-        // Update meal
-        if (mealPreference) {
-            const mealPrices = {
-                'Standard': 0,
-                'Vegetarian': 500,
-                'Vegan': 700,
-                'Halal': 1000,
-                'Kosher': 1200,
-                'Gluten-Free': 1500
-            };
-            reservation.mealPrice = mealPrices[mealPreference] || 0;
-            reservation.mealPreference = mealPreference;
+        // Calculate price difference
+        var mealPrices = {
+            'Standard': 0, 'Vegetarian': 150, 'Vegan': 200,
+            'Halal': 250, 'Kosher': 300, 'Gluten-Free': 200
+        };
+        var newMealPrice = mealPrices[mealPreference] || 0;
+        var oldMealPrice = mealPrices[reservation.mealPreference] || 0;
+        var priceDifference = (newMealPrice - oldMealPrice) + (extraServicesPrice || 0);
+        var newTotalPrice = reservation.total_price + priceDifference;
+
+        // Update extras object
+        var extraServicesObj = {
+            checkedBaggage: 0, carryOn: 0, priorityBoarding: false,
+            travelInsurance: false, loungeAccess: false
+        };
+        if (extraServices && extraServices.length > 0) {
+            extraServices.forEach(function(service) {
+                if (service.name === 'Checked-in Baggage') extraServicesObj.checkedBaggage = service.quantity || 1;
+                else if (service.name === 'Carry-on Baggage') extraServicesObj.carryOn = service.quantity || 1;
+                else if (service.name === 'Priority Boarding') extraServicesObj.priorityBoarding = true;
+                else if (service.name === 'Travel Insurance') extraServicesObj.travelInsurance = true;
+                else if (service.name === 'Lounge Access') extraServicesObj.loungeAccess = true;
+            });
         }
 
-        // Update other fields
+        // Update reservation
+        const updateData = {
+            seatNumber: seatNumber.toUpperCase(),
+            mealPreference: mealPreference || 'Standard',
+            mealPrice: newMealPrice,
+            extraServices: extraServicesObj,
+            extraServicesPrice: extraServicesPrice || 0,
+            total_price: newTotalPrice
+        };
         if (specialRequests !== undefined) {
-            reservation.specialRequests = specialRequests;
-        }
-        if (extraServices) {
-            reservation.extraServices = extraServices;
-        }
-        if (extraServicesPrice !== undefined) {
-            reservation.extraServicesPrice = extraServicesPrice;
+            updateData.specialRequests = specialRequests;
         }
 
         // Recalculate total price
@@ -328,8 +369,6 @@ exports.updateReservation = async (req, res) => {
             message: 'Reservation updated successfully',
             data: {
                 _id: updatedReservation._id,
-                booking_ref: updatedReservation.booking_ref,
-                passengerName: updatedReservation.passengerId.full_name,
                 seatNumber: updatedReservation.seatNumber,
                 mealPreference: updatedReservation.mealPreference,
                 mealPrice: updatedReservation.mealPrice,
@@ -340,97 +379,24 @@ exports.updateReservation = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Update reservation error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Error updating reservation'
-        });
+        console.error('Update reservation seat error:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
 // ============================================================
-// HELPER FUNCTION: GET OCCUPIED SEATS
+// Cancel Reservation
 // ============================================================
-
-async function getOccupiedSeats(flightId, excludeReservationId) {
-    const reservations = await Reservation.find({
-        flightId: flightId,
-        status: { $in: ['Pending', 'Confirmed'] },
-        _id: { $ne: excludeReservationId }
-    });
-
-    return reservations.map(r => r.seatNumber);
-}
-
-// ============================================================
-// GET SEAT MAP 
-// ============================================================
-
-exports.getSeatMap = async (req, res) => {
-    try {
-        // IMPORTANT FIX: Accept BOTH flightId AND reservationId
-        const flightId = req.params.flightId;
-        const reservationId = req.params.reservationId; 
-        
-        const flight = await Flight.findById(flightId);
-        if (!flight) {
-            return res.status(404).json({
-                success: false,
-                message: 'Flight not found'
-            });
-        }
-
-        // Get all occupied seats (Excluding the current reservation)
-        const occupiedSeats = await getOccupiedSeats(flightId, reservationId);
-
-        // Generate all possible seats
-        const allSeats = [];
-        const rows = ['A', 'B', 'C', 'D', 'E', 'F'];
-        const maxRows = 10;
-
-        for (let row = 1; row <= maxRows; row++) {
-            for (let col = 0; col < rows.length; col++) {
-                const seatNumber = row + rows[col];
-                allSeats.push({
-                    seat: seatNumber,
-                    isOccupied: occupiedSeats.includes(seatNumber),
-                    isBooked: occupiedSeats.includes(seatNumber)
-                });
-            }
-        }
-
-        res.json({
-            success: true,
-            data: {
-                allSeats: allSeats,
-                occupiedSeats: occupiedSeats,
-                availableCount: allSeats.filter(s => !s.isOccupied).length,
-                totalSeats: allSeats.length
-            }
-        });
-    } catch (error) {
-        console.error('Get seat map error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-};
-
-// ============================================================
-// CANCEL RESERVATION
-// ============================================================
-
 exports.cancelReservation = async (req, res) => {
     try {
-        const reservationId = req.params.id;
+        if (!req.session.user) {
+            return res.status(401).json({ success: false, message: 'Not authenticated' });
+        }
 
+        const reservationId = req.params.id;
         const reservation = await Reservation.findById(reservationId);
         if (!reservation) {
-            return res.status(404).json({
-                success: false,
-                message: 'Reservation not found'
-            });
+            return res.status(404).json({ success: false, message: 'Reservation not found' });
         }
 
         const before = {
@@ -438,17 +404,10 @@ exports.cancelReservation = async (req, res) => {
         };
 
         if (reservation.userId.toString() !== req.session.user._id.toString()) {
-            return res.status(403).json({
-                success: false,
-                message: 'Access denied'
-            });
+            return res.status(403).json({ success: false, message: 'Access denied' });
         }
-
         if (reservation.status !== 'Pending' && reservation.status !== 'Confirmed') {
-            return res.status(400).json({
-                success: false,
-                message: 'Reservation cannot be cancelled in its current status'
-            });
+            return res.status(400).json({ success: false, message: 'Reservation cannot be cancelled in its current status' });
         }
 
         reservation.status = 'Cancelled';
@@ -488,33 +447,25 @@ exports.cancelReservation = async (req, res) => {
         });
     } catch (error) {
         console.error('Cancel reservation error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Error cancelling reservation'
-        });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
 // ============================================================
-// GET RESERVATION COUNT
+// Get Reservation Count
 // ============================================================
-
 exports.getReservationCount = async (req, res) => {
     try {
+        if (!req.session.user) {
+            return res.status(401).json({ success: false, message: 'Not authenticated' });
+        }
         const count = await Reservation.countDocuments({
             userId: req.session.user._id,
             status: { $in: ['Pending', 'Confirmed'] }
         });
-
-        res.json({
-            success: true,
-            data: { count: count }
-        });
+        res.json({ success: true, data: { count: count } });
     } catch (error) {
         console.error('Get reservation count error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching reservation count'
-        });
+        res.status(500).json({ success: false, message: 'Error fetching reservation count' });
     }
 };

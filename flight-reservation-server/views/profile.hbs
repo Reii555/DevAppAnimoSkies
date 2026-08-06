@@ -136,10 +136,10 @@
                         {{#each user.savedPassengers}}
                             <div class="passenger-item">
                                 <div class="passenger-info">
-                                    <span>{{this.firstName}} {{this.lastName}}</span>
+                                    <span>{{this.full_name}}</span>
                                     <span class="passenger-badge">{{this.type}}</span>
                                 </div>
-                                <button class="btn-remove remove-passenger" data-index="{{@index}}">
+                                <button class="btn-remove remove-passenger" data-id="{{this._id}}">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>

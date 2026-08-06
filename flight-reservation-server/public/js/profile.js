@@ -140,7 +140,7 @@ $(document).ready(function() {
         submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...');
 
         $.ajax({
-            url: '/profile',
+            url: '/profile/update', // Ensure this matches your routes file
             method: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify({
@@ -228,18 +228,20 @@ $(document).ready(function() {
         var submitBtn = $(this);
         submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Adding...');
 
+        // FIX: Send full_name instead of firstName/lastName and passport_num instead of passportNumber
         $.ajax({
             url: '/profile/passengers',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
-                firstName: firstName,
-                lastName: lastName,
-                passportNumber: passportNumber,
-                dateOfBirth: dateOfBirth,
+                full_name: firstName + " " + lastName,
+                passport_num: passportNumber,
+                birth_date: dateOfBirth,
                 nationality: nationality,
                 gender: gender,
-                type: type
+                type: type,
+                contact_num: "N/A",
+                emergency_contact: "N/A"
             }),
             success: function(response) {
                 if (response.success) {
@@ -269,13 +271,24 @@ $(document).ready(function() {
     });
 
     // ============================================================
-    // REMOVE SAVED PASSENGERS
+    // REMOVE SAVED PASSENGERS (FIX: Use Passport/ID)
     // ============================================================
     $(document).on('click', '.remove-passenger', function() {
-        var index = $(this).data('index');
+        var passengerId = $(this).data('id'); // We need to change the HBS to use 'data-id' instead of 'data-index'
+
+        if (!passengerId) {
+            // Fallback attempt to get ID if using the wrong HTML format
+            passengerId = $(this).data('passport'); 
+        }
+
+        if (!passengerId) {
+            showToast('Error: Could not identify passenger to remove.', 'error');
+            return;
+        }
+
         if (confirm('Are you sure you want to remove this passenger?')) {
             $.ajax({
-                url: '/profile/passengers/' + index,
+                url: '/profile/passengers/' + passengerId, // Sending ID to backend
                 method: 'DELETE',
                 success: function(response) {
                     if (response.success) {
@@ -295,7 +308,7 @@ $(document).ready(function() {
     });
 
     // ============================================================
-    // ADD PAYMENT METHODS
+    // ADD PAYMENT METHODS (FIX: Correct URL)
     // ============================================================
     $('#addPaymentBtn').on('click', function() {
         var cardType = $('#paymentCardType').val();
@@ -328,8 +341,9 @@ $(document).ready(function() {
         var submitBtn = $(this);
         submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Adding...');
 
+        // FIX: Correct URL is /profile/payment-methods
         $.ajax({
-            url: '/profile/payments',
+            url: '/profile/payment-methods', 
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
@@ -367,13 +381,14 @@ $(document).ready(function() {
     });
 
     // ============================================================
-    // REMOVE PAYMENT METHODS
+    // REMOVE PAYMENT METHODS (FIX: Correct URL)
     // ============================================================
     $(document).on('click', '.remove-payment', function() {
         var index = $(this).data('index');
         if (confirm('Are you sure you want to remove this payment method?')) {
+            // FIX: Correct URL is /profile/payment-methods/ + index
             $.ajax({
-                url: '/profile/payments/' + index,
+                url: '/profile/payment-methods/' + index,
                 method: 'DELETE',
                 success: function(response) {
                     if (response.success) {
@@ -393,12 +408,13 @@ $(document).ready(function() {
     });
 
     // ============================================================
-    // SET DEFAULT PAYMENT 
+    // SET DEFAULT PAYMENT (FIX: Correct URL)
     // ============================================================
     $(document).on('click', '.set-default-payment', function() {
         var index = $(this).data('index');
+        // FIX: Correct URL is /profile/payment-methods/ + index + /default
         $.ajax({
-            url: '/profile/payments/' + index + '/default',
+            url: '/profile/payment-methods/' + index + '/default',
             method: 'PUT',
             success: function(response) {
                 if (response.success) {
