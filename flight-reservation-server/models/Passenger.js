@@ -21,6 +21,11 @@ const passengerSchema = new mongoose.Schema({
         required: true
     },
 
+    email: {
+        type: String,
+        required: true
+    },
+
     passport_num: {
         type: String,
         required: true,

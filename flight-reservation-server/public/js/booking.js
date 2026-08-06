@@ -370,19 +370,59 @@ $(document).ready(function(){
 
     });
 
-    // if save passenger button is pressed but data is invalid/data is valid
+    $(document).on("change", ".savedPassengers", function () {
+
+        let passengerCard = $(this).closest(".passenger-card");
+        let emergencyCard = passengerCard.next(".passenger-card");
+
+        const selected = $(this).find(":selected");
+
+        passengerCard.find(".fullName").val(selected.data("name"));
+        passengerCard.find(".email").val(selected.data("email"));
+        passengerCard.find(".contactNum").val(selected.data("contact"));
+        passengerCard.find(".passportNum").val(selected.data("passport"));
+        passengerCard.find(".nationality").val(selected.data("nationality"));
+        passengerCard.find(".birthDate").val(selected.data("birth"));
+        passengerCard.find(".gender").val(selected.data("gender"));
+        passengerCard.find(".passengerId").val(selected.val());
+
+        const emergency = (selected.data("emergency") || "").split("|");
+
+        emergencyCard.find(".name_emergency").val((emergency[0] || "").trim());
+        emergencyCard.find(".rel_emergency").val((emergency[1] || "").trim());
+        emergencyCard.find(".email_emergency").val((emergency[2] || "").trim());
+        emergencyCard.find(".contact_emergency").val((emergency[3] || "").trim());
+        
+    });
+
     $(document).on("click", ".savePassenger", function () {
+
+        // if email already exists for this user, dont save in the database
 
         let emergencyCard = $(this).prev(".passenger-card");
         let passengerCard = emergencyCard.prev(".passenger-card");
 
         let fullName = passengerCard.find(".fullName").val().trim();
         let contactNum = passengerCard.find(".contactNum").val().trim();
+        let email = passengerCard.find(".email").val().trim();
         let passportNum = passengerCard.find(".passportNum").val().trim();
         let nationality = passengerCard.find(".nationality").val();
         let birthDate = passengerCard.find(".birthDate").val();
         let gender = passengerCard.find(".gender").val();
         let emergencyContact = emergencyCard.find(".name_emergency").val().trim() + " | " + emergencyCard.find(".rel_emergency").val() + " | " + emergencyCard.find(".contact_emergency").val().trim();
+
+        let existingPassengerId = passengerCard.find(".passengerId").val();
+
+        if (existingPassengerId) {
+
+            if (!passengerIds.includes(existingPassengerId)) {
+                passengerIds.push(existingPassengerId);
+            }
+
+            alert("Passenger saved!");
+
+            return;
+        }
 
         $.ajax({
 
@@ -391,9 +431,9 @@ $(document).ready(function(){
 
             data: {
 
-                user_id: "6884b6f3b0f0d6b1d6c8e123",
                 full_name: fullName,
                 contact_num: contactNum,
+                email: email,
                 passport_num: passportNum,
                 nationality: nationality,
                 birth_date: birthDate,

@@ -62,34 +62,38 @@ async function seedDatabase() {
                 user_id: testUser._id,
                 full_name: 'Reina Lagos',
                 contact_num: '+639988776655',
+                email: 'reina.lagos@hotmail.com',
                 passport_num: 'A12345678',
                 nationality: 'Filipino',
                 birth_date: new Date('1992-03-15'),
                 gender: 'Female',
                 type: 'Adult',
-                emergency_contact: 'Mama Lagos'
+                emergency_contact: 'Mama Lagos | Mother | mama@gmail.com | 638899776655'
             },
             {
                 user_id: testUser._id,
                 full_name: 'Maria Santos',
                 contact_num: '+639977665544',
+                email: 'maria.santos@hotmail.com',
                 passport_num: 'B87654321',
                 nationality: 'Filipino',
                 birth_date: new Date('1988-06-20'),
                 gender: 'Female',
                 type: 'Adult',
-                emergency_contact: 'Papa Santos'
+                emergency_contact: 'Papa Santos | Father | papa@gmail.com | 637788996655'
             },
             {
                 user_id: testUser._id,
                 full_name: 'Juan Dela Cruz',
                 contact_num: '+639955443322',
+                email: 'juan.cruz@hotmail.com',
                 passport_num: 'C12345678',
                 nationality: 'Filipino',
                 birth_date: new Date('1995-11-05'),
                 gender: 'Male',
                 type: 'Adult',
-                emergency_contact: 'Maria Dela Cruz'
+                emergency_contact: 'Maria Dela Cruz | Mother | maria@gmail.com | 631133557799'
+                
             }
         ];
         await Passenger.insertMany(passengers);
