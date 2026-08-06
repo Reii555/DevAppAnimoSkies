@@ -1,4 +1,5 @@
 const Flight = require("../models/Flight");
+const AuditLog = require("../models/AuditLog");
 
 // render flights
 exports.renderFlights = async (req, res) => {
@@ -88,9 +89,19 @@ exports.searchFlights = async (req, res) => {
 // add flight
 exports.addFlight = async (req, res) => {
 
+    const user = req.session.user;
+
     try {
         const flight = new Flight(req.body);
         await flight.save();
+
+        // AUDIT LOG
+        await AuditLog.create({
+            username: user.email,
+            role: user.role,
+            activity: "Create Flight"
+        });
+
         res.status(201).json({
             message: "Flight added successfully",
             flight
@@ -108,6 +119,8 @@ exports.addFlight = async (req, res) => {
 // edit flight
 exports.updateFlight = async (req, res) => {
 
+    const user = req.session.user;
+
     try {
 
         const flight = await Flight.findByIdAndUpdate(
@@ -118,6 +131,14 @@ exports.updateFlight = async (req, res) => {
                 runValidators: true
             }
         );
+
+        // AUDIT LOG
+        await AuditLog.create({
+            username: user.email,
+            role: user.role,
+            activity: "Update Flight"
+        });
+
 
         if (!flight) {
             return res.status(404).json({
@@ -143,11 +164,20 @@ exports.updateFlight = async (req, res) => {
 // delete flight
 exports.deleteFlight = async (req, res) => {
 
+    const user = req.session.user;
+
     try {
 
         const flight = await Flight.findByIdAndDelete(
             req.params.id
         );
+
+        // AUDIT LOG
+        await AuditLog.create({
+            username: user.email,
+            role: user.role,
+            activity: "Delete Flight"
+        });
 
         if (!flight) {
             return res.status(404).json({

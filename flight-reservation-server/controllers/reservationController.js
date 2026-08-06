@@ -1,6 +1,7 @@
 const Reservation = require('../models/Reservation');
 const Flight = require('../models/Flight');
 const Passenger = require('../models/Passenger');
+const AuditLog = require('../models/AuditLog');
 
 // ============================================================
 // PAGE ROUTES
@@ -290,6 +291,13 @@ exports.updateReservation = async (req, res) => {
 
         await reservation.save();
 
+        // AUDIT LOG
+        await AuditLog.create({
+            username: user.email,
+            role: user.role,
+            activity: "Update Reservation"
+        });
+
         // Return updated data
         const updatedReservation = await Reservation.findById(reservationId)
             .populate('flightId')
@@ -421,6 +429,13 @@ exports.cancelReservation = async (req, res) => {
 
         reservation.status = 'Cancelled';
         await reservation.save();
+
+        // AUDIT LOG
+        await AuditLog.create({
+            username: user.email,
+            role: user.role,
+            activity: "Cancel Reservation"
+        });
 
         // Increment available seats 
         const flight = await Flight.findById(reservation.flightId);

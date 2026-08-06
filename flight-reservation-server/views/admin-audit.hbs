@@ -1,0 +1,87 @@
+<h1 class="page-heading">Audit Logs</h1>
+
+<!--Audit Logs Table-->
+<div class="audits-table-container">
+    <div class="table-header">
+        <div class="row g-3 mb-3">
+
+            <!--filter-->
+            <div class="col-md-4">
+                <select class="form-select" id="filterActivity">
+                    <option value="">All Activities</option>
+                    <option value="User Registration">User Registration</option>
+                    <option value="User Login">User Login</option>
+                    <option value="User Logout">User Logout</option>
+                    <option value="Reservation Creation">Reservation Creation</option>
+                    <option value="Reservation Cancellation">Reservation Cancellation</option>
+                    <option value="Flight Creation">Flight Creation</option>
+                    <option value="Flight Update">Flight Update</option>
+                    <option value="Flight Deletion">Flight Deletion</option>
+                </select>
+            </div>
+
+            <!--Sort by dropdown-->
+            <div class="col-md-4">
+                <select class="form-select" id="filterUsers">
+                    <option value="">All Users</option>
+                    {{#each usernames}}
+                    <option value="{{this}}">{{this}}</option>
+                    {{/each}}
+                </select>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="audits-table">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Activity</th>
+                    <th>Date and Time</th>
+                </tr>
+            </thead>
+            <tbody id="auditsTableBody">
+
+                {{#each logs}}
+                <tr data-user="{{username}}" data-activity="{{activity}}">
+
+                    <td>{{username}}</td>
+
+                    <td>{{role}}</td>
+
+                    <td>{{activity}}</td>
+
+                    <td>{{dateTime}}</td>
+
+                </tr>
+                {{/each}}
+
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item">
+                    <button class="page-link" id="previousPage">Previous</button>
+                </li>
+
+                <li class="page-item">
+                    <span class="page-link" id="currentPage">1</span>
+                </li>
+
+                <li class="page-item">
+                    <button class="page-link" id="nextPage">Next</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Custom JS -->
+<script src="/js/admin-audit.js"></script>

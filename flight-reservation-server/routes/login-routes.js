@@ -2,6 +2,8 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
 const User = require('../models/User');
+const AuditLog = require('../models/AuditLog');
+
 
 // SHOW LOGIN PAGE
 router.get('/login', (req, res) => {
@@ -65,7 +67,14 @@ router.post('/login', async (req, res) => {
         console.log("Session saved:", req.session.user);
 
         console.log('User logged in:', user.email);
-        console.log('   Role:', user.role);
+        console.log('Role:', user.role);
+
+        // AUDIT LOG
+        await AuditLog.create({
+            username: user.email,
+            role: user.role,
+            activity: "User Login"
+        });
 
         // Redirect based on role
         if (user.role === 'admin') {
@@ -87,8 +96,19 @@ router.post('/login', async (req, res) => {
 });
 
 // LOGOUT ROUTE
-router.get('/logout', (req, res) => {
+router.get('/logout', async (req, res) => {
+
+    const user = req.session.user;
+
+    // AUDIT LOG
+    await AuditLog.create({
+        username: user.email,
+        role: user.role,
+        activity: "User Logout"
+    });
+
     req.session.destroy((err) => {
+
         if (err) {
             console.error('Logout error:', err);
         }

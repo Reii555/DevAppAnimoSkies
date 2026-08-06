@@ -3,6 +3,7 @@ const Passenger = require('../models/Passenger');
 const Seat = require("../models/Seat");
 const Meal = require("../models/Meal");
 const Reservation = require("../models/Reservation");
+const AuditLog = require("../models/AuditLog");
 
 exports.showBookingPage = async (req, res) => {
     try {
@@ -36,7 +37,7 @@ exports.savePassenger = async (req, res) => {
 
         res.json(passenger);
 
-    } catch(err) {
+    } catch (err) {
 
         console.log(err);
         res.status(500).json(err);
@@ -47,13 +48,13 @@ exports.savePassenger = async (req, res) => {
 exports.getSeats = async (req, res) => {
     try {
 
-        const seats = await Seat.find({flight_id: req.params.id});
+        const seats = await Seat.find({ flight_id: req.params.id });
         res.json(seats);
 
-    } catch(err) {
+    } catch (err) {
 
         console.log(err);
-        res.status(500).json({success:false});
+        res.status(500).json({ success: false });
     }
 
 };
@@ -64,10 +65,10 @@ exports.getMeals = async (req, res) => {
         const meals = await Meal.find();
         res.json(meals);
 
-    } catch(err){
+    } catch (err) {
 
         console.log(err);
-        res.status(500).json({success:false});
+        res.status(500).json({ success: false });
     }
 };
 
@@ -82,7 +83,8 @@ exports.getFlightPrice = async (req, res) => {
 exports.bookFlight = async (req, res) => {
 
     console.log(req.body);
-    const userId = req.session.user._id;
+    const user = req.session.user;
+    const userId = user._id;
 
     try {
 
@@ -118,15 +120,22 @@ exports.bookFlight = async (req, res) => {
 
 
         await Passenger.findByIdAndUpdate(
-            req.body.passengerId,{reservation_id: reservation._id}
+            req.body.passengerId, { reservation_id: reservation._id }
 
         );
+
+        // AUDIT LOG
+        await AuditLog.create({
+            username: user.email,
+            role: user.role,
+            activity: "Create Reservation"
+        });
 
         res.json(reservation);
 
     }
 
-    catch(err){
+    catch (err) {
 
         console.log(err);
         res.status(500).json(err);

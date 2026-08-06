@@ -12,6 +12,8 @@ const Flight = require('./models/Flight');
 const Seat = require('./models/Seat');
 const Meal = require('./models/Meal');
 const ExtraService = require('./models/ExtraService');
+const AuditLog = require('./models/AuditLog');
+
 
 // Load environment variables
 require('dotenv').config();
@@ -131,6 +133,7 @@ const reservationRoutes = require('./routes/reservationRoutes');
 const adminUsersRoutes = require('./routes/admin-users-routes');
 const adminReservationsRoutes = require('./routes/admin-reservations-routes');
 const homeRoutes = require('./routes/homeRoutes');
+const adminRoutes = require('./routes/admin-audits-routes');
 
 app.use('/', loginRoutes);
 app.use('/', registerRoutes);
@@ -143,6 +146,8 @@ app.use('/admin-flights', adminFlightRoutes);
 app.use('/admin-users', adminUsersRoutes);
 app.use('/admin-reservations', adminReservationsRoutes);
 app.use('/', homeRoutes);
+app.use('/admin-audit', adminRoutes);
+
 
 // REGISTER ROUTES
 app.get('/register', (req, res) => {

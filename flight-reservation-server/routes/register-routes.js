@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const AuditLog = require('../models/AuditLog');
 
 // GET: Show Registration Page
 router.get('/register', (req, res) => {
@@ -42,7 +43,7 @@ router.post('/register', async (req, res) => {
     try {
         const { email, phone, password, confirmPassword } = req.body;
 
-        // 1. Check if passwords match
+        // passwords match
         if (password !== confirmPassword) {
             return res.render('register', {
                 title: 'Sign Up',
@@ -53,7 +54,7 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // 2. Check password length
+        // valid password length
         if (password.length < 8) {
             return res.render('register', {
                 title: 'Sign Up',
@@ -64,7 +65,7 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // 3. Check if email already exists
+        // does the email already exist
         const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
         if (existingUser) {
             return res.render('register', {
@@ -76,7 +77,7 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // 4. Check if phone already exists
+        // does the phone already exists
         const existingPhone = await User.findOne({ phone: phone.trim() });
         if (existingPhone) {
             return res.render('register', {
@@ -88,7 +89,7 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // 5. Create new user 
+        // create new user 
         const user = new User({
             email: email.trim().toLowerCase(),
             phone: phone.trim(),
@@ -103,7 +104,13 @@ router.post('/register', async (req, res) => {
         console.log('   Phone:', user.phone);
         console.log('   User ID:', user.user_id);
 
-        // 6. Redirect to login with success message
+        await AuditLog.create({
+            username: user.email,
+            role: user.role,
+            activity: "User Registration"
+        });
+
+        // redirect to login with success message
         res.render('login', {
             title: 'Login',
             layout: false,
@@ -179,7 +186,14 @@ router.post('/signup', async (req, res) => {
         });
 
         await user.save();
-        console.log('✅ New user signed up:', user.email);
+        console.log('New user signed up:', user.email);
+
+        // AUDIT LOG
+        await AuditLog.create({
+            username: user.email,
+            role: user.role,
+            activity: "User Registration"
+        });
 
         res.render('login', {
             title: 'Login',

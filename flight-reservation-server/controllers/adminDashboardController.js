@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Reservation = require("../models/Reservation");
 const Flight = require("../models/Flight");
+const AuditLog = require('../models/AuditLog');
 
 // render
 exports.renderDashboard = async (req, res) => {
@@ -116,4 +117,30 @@ exports.getRevenueData = async (req, res) => {
             error: "Error loading revenue data"
         });
     }
+};
+
+// Audit Logs
+exports.viewAuditLogs = async (req, res) => {
+
+    try {
+
+        const logs = await AuditLog.find().sort({ dateTime: -1 });
+
+        const usernames = await AuditLog.distinct("username");
+
+        res.render('admin-audit', {
+            title: 'Audit Logs',
+            layout: "main-admin",
+            logs,
+            usernames
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).send("Error loading audit logs");
+
+    }
+
 };
