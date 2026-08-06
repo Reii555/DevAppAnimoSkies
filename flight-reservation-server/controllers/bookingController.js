@@ -101,6 +101,25 @@ exports.bookFlight = async (req, res) => {
     const user = req.session.user;
     const userId = user._id;
 
+    const seat = await Seat.findOne({
+        flight_id: req.body.flightId,
+        seatNumber: req.body.seatNumber
+    });
+
+    if (!seat) {
+        return res.status(404).json({
+            success: false,
+            message: "Seat not found."
+        });
+    }
+
+    if (seat.status === "Occupied") {
+        return res.status(400).json({
+            success: false,
+            message: "Seat is already occupied."
+        });
+    }
+
     try {
 
         const reservation = await Reservation.create({
