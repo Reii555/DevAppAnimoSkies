@@ -291,6 +291,8 @@ exports.updateReservation = async (req, res) => {
 
         await reservation.save();
 
+        const user = req.session.user;
+
         // AUDIT LOG
         await AuditLog.create({
             username: user.email,
@@ -429,6 +431,8 @@ exports.cancelReservation = async (req, res) => {
 
         reservation.status = 'Cancelled';
         await reservation.save();
+
+        const user = req.session.user;
 
         // AUDIT LOG
         await AuditLog.create({
