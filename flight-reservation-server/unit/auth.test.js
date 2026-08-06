@@ -4,7 +4,7 @@ const app = require("../server");
 const User = require("../models/User");
 const AuditLog = require("../models/AuditLog");
 
-// Mock audit log so it doesn't affect authentication tests
+//mock audit log so it doesn't affect authentication tests
 jest.spyOn(AuditLog, "create").mockResolvedValue({});
 
 describe("Authentication", () => {
