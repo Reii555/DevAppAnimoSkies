@@ -68,6 +68,7 @@ describe("Reservation Management", () => {
 
             user_id: user._id,
             full_name: "John Kennedy",
+            email: "passenger@test.com",
             contact_num: "09123456789",
             passport_num: "P1234567",
             nationality: "Filipino",
