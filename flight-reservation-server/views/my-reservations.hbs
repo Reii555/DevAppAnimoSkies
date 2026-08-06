@@ -1,22 +1,13 @@
-<div class="container my-5">
+<div class="container my-4">
     <div class="row">
         <div class="col-12">
-            <div class="card border-0 shadow-sm p-4">
-                
-                <!-- Page Header -->
-                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
-                    <h4 class="m-0"><i class="fas fa-ticket-alt text-primary me-2"></i>My Reservations</h4>
-                </div>
+            <div class="reservation-card p-4">
+                <div class="section-title">My Reservations</div>
 
-                <!-- Controls: Search, Filter, Sort -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-5">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
-                            <input type="text" class="form-control" id="searchInput" placeholder="Search by name or reference...">
-                        </div>
-                    </div>
-                    <div class="col-md-3">
+                <!-- Search and Filter -->
+                <div class="res-controls">
+                    <div class="search-sort">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search by name/reference number">
                         <select class="form-select" id="filterStatus">
                             <option value="all">All Status</option>
                             <option value="Pending">Pending</option>
@@ -24,13 +15,13 @@
                             <option value="Cancelled">Cancelled</option>
                             <option value="Completed">Completed</option>
                         </select>
-                    </div>
-                    <div class="col-md-3">
                         <select class="form-select" id="sortSelect">
+                            <option value="">Sort By</option>
                             <option value="dateDesc">Newest First</option>
                             <option value="dateAsc">Oldest First</option>
-                            <option value="priceAsc">Price: Low to High</option>
-                            <option value="priceDesc">Price: High to Low</option>
+                            <option value="priceAsc">Price ↑</option>
+                            <option value="priceDesc">Price ↓</option>
+                            <option value="status">By Status</option>
                         </select>
                     </div>
                 </div>
@@ -39,82 +30,100 @@
                 <div id="reservationsList">
                     {{#if reservations.length}}
                         {{#each reservations}}
-                        <div class="reservation-item card mb-3 border-0 shadow-sm rounded-3" data-id="{{this._id}}" data-date="{{this.booking_date}}">
-                            
-                            <!-- Top Summary Bar -->
-                            <div class="res-summary card-body p-3 d-flex flex-wrap align-items-center justify-content-between cursor-pointer">
-                                <div class="d-flex align-items-center gap-3 flex-wrap">
-                                    <span class="fw-bold text-primary fs-5">{{this.booking_ref}}</span>
-                                    <span class="text-muted">— {{this.passengerName}}</span>
-                                </div>
-                                
-                                <div class="d-flex align-items-center gap-2 text-secondary small">
-                                    <i class="fas fa-plane-departure"></i> {{this.flight_id.origin}} <i class="fas fa-arrow-right mx-1" style="font-size: 0.7rem;"></i> {{this.flight_id.destination}}
-                                    <span class="badge bg-light text-dark border ms-2">Seat {{this.seatNumber}}</span>
+                            <div class="reservation-item" data-id="{{this._id}}" data-date="{{this.booking_date}}">
+                                <div class="res-summary">
+                                    <div>
+                                        <span class="res-ref">{{this.booking_ref}}</span>
+                                        <span class="res-passenger">— {{this.passengerName}}</span>
+                                    </div>
+                                    <div class="res-route">
+                                        <i class="fas fa-plane"></i> {{this.flight_id.origin}} → {{this.flight_id.destination}} | Seat {{this.seatNumber}}
+                                    </div>
+                                    <div>
+                                        <span class="res-status status-{{this.status}}">{{this.status}}</span>
+                                    </div>
+                                    <div class="res-price">
+                                        ₱{{this.total_price}} 
+                                        <i class="fas fa-chevron-down res-expand-icon"></i>
+                                    </div>
                                 </div>
 
-                                <div class="d-flex align-items-center gap-3 mt-2 mt-md-0">
-                                    <span class="res-status badge rounded-pill px-3 py-2">{{this.status}}</span>
-                                    <div class="res-price fw-bold text-success">
-                                        ₱{{this.total_price}}
-                                        <i class="fas fa-chevron-down res-expand-icon text-muted ms-2" style="font-size: 0.8rem; transition: transform 0.3s;"></i>
+                                <div class="res-detail">
+                                    <div class="detail-row">
+                                        <div>
+                                            <span class="label">Flight Date:</span>
+                                            <span class="value">{{formatDate this.flight_id.departureTime}}</span>
+                                        </div>
+                                        <div>
+                                            <span class="label">Flight Number:</span>
+                                            <span class="value">{{this.flight_id.flight_number}}</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-row">
+                                        <div>
+                                            <span class="label">Meal:</span>
+                                            <span class="value">{{this.meal_id.meal_name}}</span>
+                                        </div>
+                                        <div>
+                                            <span class="label">Trip Type:</span>
+                                            <span class="value">{{this.trip_type}}</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-row">
+                                        <div>
+                                            <span class="label">Passenger:</span>
+                                            <span class="value">{{this.passengerName}}</span>
+                                        </div>
+                                        <div>
+                                            <span class="label">Booking Date:</span>
+                                            <span class="value">{{formatDate this.booking_date}}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="detail-actions">
+                                        <button class="btn-action btn-view view-details" data-id="{{this._id}}">
+                                            <i class="fas fa-eye me-1"></i>View Details
+                                        </button>
+                                        
+                                        {{#if (or (eq this.status 'Pending') (eq this.status 'Confirmed'))}}
+                                            <button class="btn-action btn-edit edit-seat" 
+                                                    data-id="{{this._id}}" 
+                                                    data-seat="{{this.seatNumber}}" 
+                                                    data-meal="{{this.meal_id.meal_name}}" 
+                                                    data-price="{{this.total_price}}"
+                                                    data-passenger="{{this.passengerId}}">
+                                                <i class="fas fa-edit me-1"></i>Edit Seat
+                                            </button>
+                                            <button class="btn-action btn-cancel cancel-reservation" data-id="{{this._id}}" data-ref="{{this.booking_ref}}" data-passenger="{{this.passengerName}}">
+                                                <i class="fas fa-times-circle me-1"></i>Cancel
+                                            </button>
+                                        {{/if}}
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Expanded Details -->
-                            <div class="res-detail bg-light p-3 border-top" style="display: none;">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="mb-2"><span class="text-muted fw-light">Flight Date:</span> <span class="fw-medium">{{formatDate this.flight_id.departureTime}}</span></div>
-                                        <div class="mb-2"><span class="text-muted fw-light">Flight Number:</span> <span class="fw-medium">{{this.flight_id.flight_number}}</span></div>
-                                        <div class="mb-2"><span class="text-muted fw-light">Meal:</span> <span class="fw-medium">{{this.meal_id.meal_name}}</span></div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-2"><span class="text-muted fw-light">Trip Type:</span> <span class="fw-medium">{{this.trip_type}}</span></div>
-                                        <div class="mb-2"><span class="text-muted fw-light">Booking Date:</span> <span class="fw-medium">{{formatDate this.booking_date}}</span></div>
-                                    </div>
-                                </div>
-
-                                <!-- Action Buttons -->
-                                <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top">
-                                    <button class="btn btn-success btn-sm view-details" data-id="{{this._id}}">
-                                        <i class="fas fa-eye me-1"></i> View Details
-                                    </button>
-                                    
-                                    {{#if (or (eq this.status 'Pending') (eq this.status 'Confirmed'))}}
-                                    <button class="btn btn-primary btn-sm edit-seat" data-id="{{this._id}}" data-seat="{{this.seatNumber}}" data-meal="{{this.meal_id.meal_name}}" data-price="{{this.total_price}}">
-                                        <i class="fas fa-edit me-1"></i> Edit Seat
-                                    </button>
-                                    <button class="btn btn-danger btn-sm cancel-reservation" data-id="{{this._id}}" data-ref="{{this.booking_ref}}" data-passenger="{{this.passengerName}}">
-                                        <i class="fas fa-times-circle me-1"></i> Cancel
-                                    </button>
-                                    {{/if}}
-                                </div>
-                            </div>
-                        </div>
                         {{/each}}
 
                         <!-- Pagination -->
-                        <div class="d-flex justify-content-center align-items-center gap-2 mt-4">
+                        <div class="pagination-controls">
                             {{#if pagination}}
-                            <button class="btn btn-outline-secondary btn-sm" id="prevPage" {{#unless pagination.hasPrev}}disabled{{/unless}}>Previous</button>
-                            <span class="btn btn-light btn-sm disabled active-page">{{pagination.currentPage}} / {{pagination.totalPages}}</span>
-                            <button class="btn btn-outline-secondary btn-sm" id="nextPage" {{#unless pagination.hasNext}}disabled{{/unless}}>Next</button>
+                                <button class="page-btn" id="prevPage" {{#unless pagination.hasPrev}}disabled{{/unless}}>Previous</button>
+                                <span class="page-btn active-page">{{pagination.currentPage}} / {{pagination.totalPages}}</span>
+                                <button class="page-btn" id="nextPage" {{#unless pagination.hasNext}}disabled{{/unless}}>Next</button>
                             {{/if}}
                         </div>
                     {{else}}
-                        <div class="text-center py-5 bg-light rounded-3">
+                        <div class="text-center py-4">
                             <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
-                            <p class="text-muted fs-5">You have no reservations yet.</p>
-                            <a href="/search" class="btn btn-primary">Browse Flights</a>
+                            <p class="text-muted">No reservations found</p>
+                            <a href="/search" class="btn btn-primary">Book a Flight</a>
                         </div>
                     {{/if}}
                 </div>
 
-                <!-- Back Button -->
+                <!-- Go Back Button -->
                 <div class="text-center mt-4">
-                    <button class="btn btn-link text-decoration-none text-muted" id="goBackBtn"><i class="fas fa-arrow-left me-2"></i>Go Back</button>
+                    <button class="btn-back" id="goBackBtn"><i class="fas fa-arrow-left me-2"></i>Go Back</button>
                 </div>
             </div>
         </div>
@@ -125,12 +134,12 @@
 <div class="modal fade" id="detailsModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header modal-header-primary">
                 <h5 class="modal-title"><i class="fas fa-ticket-alt me-2"></i>Booking Details</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="detailsContent">
-                <div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading...</p></div>
+                <div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading details...</p></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -143,7 +152,7 @@
 <div class="modal fade" id="editSeatModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header modal-header-primary">
                 <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Reservation</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -152,83 +161,105 @@
                     <input type="hidden" id="editReservationId">
                     <input type="hidden" id="editFlightId">
 
-                    <!-- Flight Info -->
-                    <div class="alert alert-light border mb-4" id="editFlightInfo">
-                        <p class="mb-1 text-muted small">Loading flight info...</p>
+                    <!-- Current Flight Info -->
+                    <div class="flight-info-box mb-4" id="editFlightInfo">
+                        <p class="text-muted">Loading flight information...</p>
                     </div>
 
                     <!-- Passenger Dropdown -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold"><i class="fas fa-user me-2"></i>Select Passenger <span class="text-danger">*</span></label>
+                        <h6><i class="fas fa-user me-2"></i>Select Passenger <span class="text-danger">*</span></h6>
                         <select class="form-select" id="passengerDropdown" required>
                             <option value="">Choose a saved passenger...</option>
                         </select>
                         <div id="passengerInfoDisplay" class="mt-2 p-2 bg-light rounded small text-muted"></div>
                     </div>
 
-                    <!-- Seat Map -->
+                    <!-- Seat Selection -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold"><i class="fas fa-chair me-2"></i>Select Seat <span class="text-danger">*</span></label>
-                        <div id="editSeatGrid" class="border rounded p-3 bg-white text-center">
-                            <div class="py-3"><i class="fas fa-spinner fa-spin"></i> Loading seats...</div>
+                        <h6><i class="fas fa-chair me-2"></i>Select Seat <span class="text-danger">*</span></h6>
+                        <div id="editSeatGrid">
+                            <div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Loading seats...</div>
                         </div>
-                        <div class="mt-2 d-flex justify-content-between">
-                            <small class="text-muted">Selected: <strong id="editSelectedSeat">None</strong></small>
-                            <small class="text-muted" id="availableSeatsCount"></small>
-                        </div>
-                    </div>
-
-                    <!-- Options -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Meal Preference</label>
-                            <select class="form-select" id="editMealPreference">
-                                <option value="Standard">Standard</option>
-                                <option value="Vegetarian">Vegetarian</option>
-                                <option value="Vegan">Vegan</option>
-                                <option value="Halal">Halal</option>
-                                <option value="Kosher">Kosher</option>
-                                <option value="Gluten-Free">Gluten-Free</option>
-                            </select>
-                            <small class="text-muted" id="mealPriceDisplay"></small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Special Requests</label>
-                            <textarea class="form-control" id="editSpecialRequests" rows="2" placeholder="Optional..."></textarea>
+                        <div class="mt-2">
+                            <small class="text-muted">Selected seat: <strong id="editSelectedSeat">None</strong></small>
+                            <span class="ms-3"><small class="text-muted" id="availableSeatsCount"></small></span>
                         </div>
                     </div>
 
-                    <!-- Extra Services (Optional Toggles) -->
+                    <!-- Meal Preference -->
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Extra Services</label>
-                        <div class="row g-2">
+                        <h6><i class="fas fa-utensils me-2"></i>Meal Preference</h6>
+                        <select class="form-select" id="editMealPreference">
+                            <option value="Standard">Standard</option>
+                            <option value="Vegetarian">Vegetarian</option>
+                            <option value="Vegan">Vegan</option>
+                            <option value="Halal">Halal</option>
+                            <option value="Kosher">Kosher</option>
+                            <option value="Gluten-Free">Gluten-Free</option>
+                        </select>
+                        <small class="text-muted" id="mealPriceDisplay">(Included)</small>
+                    </div>
+
+                    <!-- Extra Services -->
+                    <div class="mb-3">
+                        <h6 class="mb-3"><i class="fas fa-concierge-bell me-2"></i>Extra Services</h6>
+                        
+                        <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input extra-service-toggle" type="checkbox" id="editCheckedBag" data-price="600" data-name="Checked-in Baggage">
-                                    <label class="form-check-label" for="editCheckedBag">Checked-in Baggage (+₱600)</label>
+                                <label class="form-label">Checked-in</label>
+                                <input type="number" class="form-control text-center extra-service-number" id="editCheckedBag" value="0" min="0" max="5" step="1" data-price="600" data-name="Checked-in Baggage">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Carry-On</label>
+                                <input type="number" class="form-control text-center extra-service-number" id="editCarryBag" value="0" min="0" max="5" step="1" data-price="300" data-name="Carry-on Baggage">
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch d-flex justify-content-between align-items-center p-2 border rounded bg-light">
+                                    <label class="form-check-label" for="editPriorityBoard">Priority Boarding</label>
+                                    <input class="form-check-input extra-service-toggle" type="checkbox" id="editPriorityBoard" data-price="500" data-name="Priority Boarding">
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input extra-service-toggle" type="checkbox" id="editCarryBag" data-price="300" data-name="Carry-on Baggage">
-                                    <label class="form-check-label" for="editCarryBag">Carry-on Baggage (+₱300)</label>
+                                <div class="form-check form-switch d-flex justify-content-between align-items-center p-2 border rounded bg-light">
+                                    <label class="form-check-label" for="editTravelIns">Travel Insurance</label>
+                                    <input class="form-check-input extra-service-toggle" type="checkbox" id="editTravelIns" data-price="700" data-name="Travel Insurance">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch d-flex justify-content-between align-items-center p-2 border rounded bg-light">
+                                    <label class="form-check-label" for="editLoungeAccess">Lounge Access</label>
+                                    <input class="form-check-input extra-service-toggle" type="checkbox" id="editLoungeAccess" data-price="1000" data-name="Lounge Access">
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Price -->
+                    <!-- Special Requests -->
+                    <div class="mb-3">
+                        <h6><i class="fas fa-comment me-2"></i>Special Requests</h6>
+                        <textarea class="form-control" id="editSpecialRequests" rows="2" placeholder="Any special requests?"></textarea>
+                    </div>
+
+                    <!-- Price Display -->
                     <hr>
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="fw-bold">Estimated Total:</span>
-                        <span class="fs-4 fw-bold text-success" id="editTotalPrice">₱0.00</span>
+                        <strong>Total Price:</strong>
+                        <span class="fs-5 fw-bold" id="editTotalPrice">₱0.00</span>
                     </div>
-                    <small class="text-muted">Base price: <span id="editCurrentPrice">₱0.00</span></small>
+                    <small class="text-muted">Current price: <span id="editCurrentPrice">₱0.00</span></small>
                 </form>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn btn-primary" id="saveSeatEdit"><i class="fas fa-save me-1"></i> Update</button>
+                <button class="btn btn-primary" id="saveSeatEdit">
+                    <i class="fas fa-save me-1"></i> Save Changes
+                </button>
             </div>
         </div>
     </div>
@@ -238,7 +269,7 @@
 <div class="modal fade" id="cancelModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
+            <div class="modal-header modal-header-danger">
                 <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Cancel Reservation</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -257,14 +288,9 @@
 </div>
 
 <!-- Toast Notification -->
-<div id="toastMsg" class="toast align-items-center text-white border-0 position-fixed bottom-0 end-0 m-3" role="alert" aria-live="assertive" aria-atomic="true" style="z-index: 9999; display: none;">
-    <div class="d-flex">
-        <div class="toast-body" id="toastText">
-            Notification message
-        </div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-    </div>
+<div id="toastMsg" class="toast-message">
+    <i class="fas fa-check-circle me-2"></i> <span id="toastText"></span>
 </div>
 
-<!-- JavaScript -->
+<!-- Custom JS -->
 <script src="/js/reservation.js"></script>
