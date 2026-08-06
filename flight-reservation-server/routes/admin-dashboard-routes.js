@@ -2,28 +2,11 @@ const express = require("express");
 const router = express.Router();
 
 const adminDashboardController = require("../controllers/adminDashboardController"); 
+const authMiddleware = require("../middleware/auth");
 
-// render dashboard
-router.get("/", async (req, res) => {
-    console.log("SESSION USER:", req.session.user);
-    try {
-        if (!req.session.user) {
-            return res.redirect("/login");
-        }
-        if (req.session.user.role !== "admin") {
-            return res.redirect("/?error=Access Denied: Admin access only.");
-        }
-        adminDashboardController.renderDashboard(req, res);
-
-    } catch (error) {
-        console.error("Error loading admin-dashboard:", error);
-        res.status(500).send(
-            "Error loading dashboard: " + error.message
-        );
-    }
-});
-
+//authenticate
+router.get("/", authMiddleware.isAuthenticated, authMiddleware.isAdmin, adminDashboardController.renderDashboard);
 // revenue
-router.get("/revenue", adminDashboardController.getRevenueData);
+router.get("/revenue", authMiddleware.isAuthenticated, authMiddleware.isAdmin, adminDashboardController.getRevenueData);
 
 module.exports = router;

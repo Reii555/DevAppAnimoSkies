@@ -5,6 +5,7 @@ const AuditLog = require("../models/AuditLog");
 exports.renderFlights = async (req, res) => {
 
     try {
+        const user = req.session.user;
         const flights = await Flight.find().lean();
         const airlines = await Flight.distinct("airline");
 

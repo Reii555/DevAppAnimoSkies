@@ -6,41 +6,68 @@ const AuditLog = require('../models/AuditLog');
 // render
 exports.renderDashboard = async (req, res) => {
     try {
-        // statistics
-        const ongoingFlights = await Flight.countDocuments({ status: "Ongoing" });
+
+        const user = req.session.user;
+
+        const ongoingFlights = await Flight.countDocuments({
+            status: "Ongoing"
+        });
+
         const totalReservations = await Reservation.countDocuments();
+
         const totalFlights = await Flight.countDocuments();
 
-        // popular destinations
-        const popularDestinations = await Flight.aggregate([
-                {
-                    $group: {
-                        _id: "$destination",
-                        count: {
-                            $sum: 1
-                        }
-                    }
-                },
-                {
-                    $sort: {
-                        count: -1
-                    }
-                },
-                {
-                    $limit: 5
+        // Most booked destinations
+        const popularDestinations = await Reservation.aggregate([
+            {
+                $lookup: {
+                    from: "flights",
+                    localField: "flightId",
+                    foreignField: "_id",
+                    as: "flight"
                 }
-            ]);
+            },
+            {
+                $unwind: "$flight"
+            },
+            {
+                $group: {
+                    _id: "$flight.destination",
+                    bookings: {
+                        $sum: 1
+                    }
+                }
+            },
+            {
+                $sort: {
+                    bookings: -1
+                }
+            },
+            {
+                $limit: 5
+            }
+        ]);
 
-        // recent bookings
-        const recentBookings = await Reservation.find().sort({booking_date: -1}).limit(5).lean();
-        // recent flights
-        const recentFlights = await Flight.find().sort({createdAt: -1}).limit(5).lean();
+        // Latest reservations
+        const recentBookings = await Reservation.find()
+            .populate("flightId")
+            .populate("passengerId")
+            .sort({ booking_date: -1 })
+            .limit(5)
+            .lean();
+
+        // Latest flights
+        const recentFlights = await Flight.find()
+            .sort({ departureTime: -1 })
+            .limit(5)
+            .lean();
 
         res.render("admin-dashboard", {
-            title: "Dashboard",
+            title: "Admin Dashboard",
             layout: "main-admin",
-            user: req.session.user,
+            user,
             activePage: "dashboard",
+
             ongoingFlights,
             totalReservations,
             totalFlights,
@@ -50,8 +77,8 @@ exports.renderDashboard = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error loading admin-dashboard:", error);
-        res.status(500).send("Error loading dashboard: " + error.message);
+        console.error(error);
+        res.status(500).send("Error loading admin dashboard");
     }
 };
 
