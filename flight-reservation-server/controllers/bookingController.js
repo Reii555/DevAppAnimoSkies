@@ -86,6 +86,14 @@ exports.getFlightPrice = async (req, res) => {
 exports.bookFlight = async (req, res) => {
 
     console.log(req.body);
+
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({
+            success: false,
+            message: "User not authenticated. Please log in again."
+        });
+    }
+
     const user = req.session.user;
     const userId = user._id;
 
