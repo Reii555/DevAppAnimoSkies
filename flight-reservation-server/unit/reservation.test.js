@@ -18,7 +18,6 @@ describe("Reservation Management", () => {
     let passenger;
     let flight;
 
-
     beforeEach(async () => {
 
         await Promise.all([
@@ -29,9 +28,7 @@ describe("Reservation Management", () => {
             Seat.deleteMany({})
         ]);
 
-
         agent = request.agent(app);
-
 
         user = await User.create({
             email: "passenger@test.com",
@@ -41,16 +38,12 @@ describe("Reservation Management", () => {
             status: "active"
         });
 
-        const login = await agent
-            .post("/login")
-            .type("form")
-            .send({
-                email: "passenger@test.com",
-                password: "password123"
-            });
+        const login = await agent.post("/login").type("form").send({
+            email: "passenger@test.com",
+            password: "password123"
+        });
 
         console.log("LOGIN STATUS:", login.status);
-
         expect([200,302]).toContain(login.status);
 
         passenger = await Passenger.create({
@@ -62,7 +55,7 @@ describe("Reservation Management", () => {
             nationality: "Filipino",
             birth_date: new Date("1991-01-01"),
             gender: "Male",
-            emergency_contact: "Saddam Hussein"
+            emergency_contact: "Jane"
         });
 
         flight = await Flight.create({
@@ -88,7 +81,7 @@ describe("Reservation Management", () => {
             flight_id: flight._id,
             seatNumber:"1A",
             status:"Unoccupied"
-        });
+        });  
     });
 
     afterAll(async()=>{
@@ -97,24 +90,28 @@ describe("Reservation Management", () => {
 
     //create reservation
     test("Create Reservation", async()=>{
+
         const res = await agent.post("/booking/reserve").send({
+            passengerId: passenger._id.toString(),
+            flightId: flight._id.toString(),
+            seatNumber:"1A",
+            mealPreference:"Standard",
+            mealPrice:0,
+            extraServices:{},
+            extraServicesPrice:0,
+            booking_ref:"BKTEST01",
+            total_price:3000
+        });
 
-                passengerId: passenger._id.toString(),
-                flightId: flight._id.toString(),
-                seatNumber:"1A",
-                mealPreference:"Standard",
-                mealPrice:0,
-                extraServices:{},
-                extraServicesPrice:0,
-                booking_ref:"BKTEST01",
-                total_price:3000
-            });
+        console.log("CREATE STATUS:", res.status);
+        console.log("CREATE BODY:", res.body);
 
-        console.log("CREATE STATUS:",res.status);
-        console.log("CREATE BODY:",res.body);
         expect(res.status).toBe(200);
 
-        const reservation = await Reservation.findOne({ booking_ref:"BKTEST01"});
+        const reservation = await Reservation.findOne({
+                booking_ref:"BKTEST01"
+        });
+
         expect(reservation).not.toBeNull();
         expect(reservation.status).toBe("Confirmed");
 
@@ -124,7 +121,6 @@ describe("Reservation Management", () => {
             });
 
         expect(seat.status).toBe("Occupied");
-
     });
 
 
@@ -140,8 +136,7 @@ describe("Reservation Management", () => {
             }
         );
 
-        const reservation =
-            await Reservation.create({
+        const reservation = await Reservation.create({
                 userId:user._id,
                 passengerId:passenger._id,
                 flightId:flight._id,
@@ -151,22 +146,21 @@ describe("Reservation Management", () => {
                 total_price:3000
             });
 
-        const res = await agentpatch(`/reservations/${reservation._id}/cancel`);
+        const res = await agent.patch(
+                `/reservations/${reservation._id}/cancel`
+        );
 
-        console.log("CANCEL STATUS:",res.status);
-        console.log("CANCEL BODY:",res.body);
-
+        console.log("CANCEL STATUS:", res.status);
+        console.log("CANCEL BODY:", res.body);
         expect(res.status).toBe(200);
 
-        const updatedReservation = await Reservation.findById(reservation._id);
-
+        const updatedReservation = await Reservation.findById( reservation._id );
         expect(updatedReservation.status).toBe("Cancelled");
 
         const updatedSeat = await Seat.findOne({
                 flight_id:flight._id,
                 seatNumber:"1A"
-        });
-
+            });
         expect(updatedSeat.status).toBe("Unoccupied");
     });
 });
