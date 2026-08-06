@@ -2,6 +2,7 @@ const Reservation = require('../models/Reservation');
 const Flight = require('../models/Flight');
 const Passenger = require('../models/Passenger');
 const Seat = require('../models/Seat'); 
+const AuditLog = require('../models/AuditLog');
 
 // ============================================================
 // Show My Reservations

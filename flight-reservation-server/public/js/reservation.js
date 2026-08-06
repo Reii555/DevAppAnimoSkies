@@ -45,14 +45,16 @@ $(document).ready(function() {
     });
 
     // ============================================================
-    // GLOBAL VARIABLES
+    // MEAL PRICES
     // ============================================================
     var mealPrices = {
-        'Standard': 0, 'Vegetarian': 150, 'Vegan': 200,
-        'Halal': 250, 'Kosher': 300, 'Gluten-Free': 200
+        'Standard': 0,
+        'Vegetarian': 150,
+        'Vegan': 200,
+        'Halal': 250,
+        'Kosher': 300,
+        'Gluten-Free': 200
     };
-    var selectedSeat = null;
-    var currentTotalPrice = 0;
 
     // ============================================================
     // EXPAND RESERVATION DETAILS
@@ -150,8 +152,11 @@ $(document).ready(function() {
     });
 
     // ============================================================
-    // EDIT SEAT MODAL (Opens & Loads Data)
+    // EDIT SEAT MODAL
     // ============================================================
+    var selectedSeat = null;
+    var currentTotalPrice = 0;
+
     $(document).on('click', '.edit-seat', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -179,11 +184,12 @@ $(document).ready(function() {
         updateMealPriceDisplay();
         
         $('.extra-service-toggle').prop('checked', false);
+        $('.extra-service-number').val(0);
         
         $('#editSeatGrid').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading seats...</p></div>');
         $('#editFlightInfo').html('<div class="text-center py-2"><i class="fas fa-spinner fa-spin"></i> Loading flight info...</div>');
         
-        // Load flight info
+        // 1. Load Flight Info
         $.ajax({
             url: '/reservations/details/' + reservationId,
             method: 'GET',
@@ -203,10 +209,10 @@ $(document).ready(function() {
                         '<p>Departure: ' + formattedDeparture + '</p>'
                     );
                     
-                    // Load seats
+                    // 2. Load Seats
                     loadSeats(flightData._id, reservationId);
                     
-                    // Load passenger dropdown
+                    // 3. Load Passenger Dropdown
                     loadPassengerDropdown(passengerId);
                 } else {
                     showToast(detailResponse.message || 'Error loading flight', 'error');
@@ -221,7 +227,7 @@ $(document).ready(function() {
     });
 
     // ============================================================
-    // LOAD PASSENGER DROPDOWN 
+    // LOAD PASSENGER DROPDOWN
     // ============================================================
     function loadPassengerDropdown(selectedPassengerId) {
         $.ajax({
@@ -365,8 +371,6 @@ $(document).ready(function() {
                     
                     $(document).off('click', '.seat-btn:not(:disabled)');
                     $(document).on('click', '.seat-btn:not(:disabled)', function(e) {
-                        e.stopPropagation();
-                        e.preventDefault();
                         var seat = $(this).data('seat');
                         var isPremium = parseInt(seat) <= 3;
                         
@@ -401,7 +405,7 @@ $(document).ready(function() {
     }
 
     // ============================================================
-    // DYNAMIC PRICING
+    // DYNAMIC PRICING (UPDATES THE MODAL PRICE ONLY)
     // ============================================================
     function updateMealPriceDisplay() {
         var price = mealPrices[$('#editMealPreference').val()] || 0;
@@ -418,12 +422,10 @@ $(document).ready(function() {
             var pricePerUnit = parseFloat($(this).data('price')) || 0;
             extrasTotal += (quantity * pricePerUnit);
         });
-
         $('.extra-service-toggle:checked').each(function() {
             extrasTotal += parseFloat($(this).data('price')) || 0;
         });
         
-        // Calculate new total
         var newTotal = currentTotalPrice + mealPrice + extrasTotal;
         $('#editTotalPrice').text('₱' + newTotal.toFixed(2));
     }
@@ -431,17 +433,15 @@ $(document).ready(function() {
     $(document).on('input', '.extra-service-number', function() {
         calculateTotalPrice();
     });
-
     $(document).on('change', '.extra-service-toggle', function() {
         calculateTotalPrice();
     });
-
     $('#editMealPreference').on('change', function() {
         updateMealPriceDisplay();
     });
 
     // ============================================================
-    // SAVE CHANGES 
+    // SAVE CHANGES
     // ============================================================
     $('#saveSeatEdit').on('click', function(e) {
         e.preventDefault();
@@ -454,7 +454,6 @@ $(document).ready(function() {
         var selectedExtras = [];
         var extrasTotal = 0;
         
-        // Calculate number inputs 
         $('.extra-service-number').each(function() {
             var quantity = parseInt($(this).val()) || 0;
             if (quantity > 0) {
@@ -464,8 +463,6 @@ $(document).ready(function() {
                 extrasTotal += (quantity * price);
             }
         });
-
-        // Calculate toggle switches
         $('.extra-service-toggle:checked').each(function() {
             var name = $(this).data('name');
             var price = parseFloat($(this).data('price')) || 0;
@@ -502,7 +499,7 @@ $(document).ready(function() {
                     showToast('Reservation updated successfully!', 'success');
                     setTimeout(function() {
                         $('#editSeatModal').modal('hide');
-                        window.location.reload(true);
+                        location.reload();
                     }, 1000);
                 } else {
                     showToast(response.message || 'Error updating reservation', 'error');
