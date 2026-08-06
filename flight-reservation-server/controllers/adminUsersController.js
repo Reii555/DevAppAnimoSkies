@@ -1,4 +1,4 @@
-const Reservation = require("../models/Reservation");
+const User = require("../models/User");
 
 exports.renderPage = async (req, res) => {
     try {
@@ -16,6 +16,7 @@ exports.renderPage = async (req, res) => {
 
 exports.getUsers = async (req, res) => {
     try {
+
         const { page = 1, limit = 5, filter = 'all', search = '' } = req.query;
         const skip = (page - 1) * limit;
         
