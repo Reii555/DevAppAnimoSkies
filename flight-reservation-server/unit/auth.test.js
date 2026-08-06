@@ -71,7 +71,6 @@ describe("Authentication", () => {
                 password: "wrongpassword"
             });
 
-        // Change this if your login route explicitly returns 401
         expect([200, 401]).toContain(res.statusCode);
     });
 
