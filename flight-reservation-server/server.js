@@ -20,7 +20,7 @@ require('dotenv').config();
 
 // Initialize express app
 const app = express();
-const PORT = process.env.PORT || 60119;
+const PORT = 60119;
 
 // DATABASE CONNECTION
 connectDB();
