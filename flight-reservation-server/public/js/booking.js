@@ -3,7 +3,6 @@ let baseFlightPrice = 0;
 let passengerIds = [];
 let seatNums = [];
 
-// FUNCTIONS
 // Passenger Validation
 function validatePassenger() {
     let valid = true;
@@ -244,8 +243,6 @@ function updateTotalPrice() {
     $('#totalPrice').text("₱" + total);
 }
 
-
-// EVENTS
 $(document).ready(function(){
     $.ajax({
         url: window.location.pathname + "/price",
@@ -257,7 +254,7 @@ $(document).ready(function(){
         }
     });
 
-    // If [add passenger] is clicked, another passenger card is created
+    // if [add passenger] is clicked, another passenger card is created
     $("#addPassenger").click(function(){
 
         passengerCount++;
@@ -505,7 +502,7 @@ $(document).ready(function(){
             // seatRow is now = [row#Letter]
         }
 
-        seatRow += `<div class="col"></div>`; // spacer for the aisle
+        seatRow += `<div class="col"></div>`;
 
         // display seats for the right side of the aisle
         for(let i = 3; i < 6; i++) {
@@ -582,7 +579,7 @@ $(document).ready(function(){
 
         }
 
-        // if seat already exists in the array, remove it. if it doesn't, add it.
+        // if seat in array, remove, but if seat not in array, add
         
         const seat = $(this).text().trim();
 
