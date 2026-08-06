@@ -196,7 +196,10 @@ router.post('/signup', async (req, res) => {
             resource: user._id.toString(),
 
             after: {
-                email: user.email
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                status: user.status
             }
         });
 
