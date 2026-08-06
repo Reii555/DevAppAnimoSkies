@@ -44,6 +44,14 @@ router.post('/login', async (req, res) => {
         const isValid = await user.comparePassword(password);
 
         if (!isValid) {
+            // AUDIT LOG
+            await AuditLog.create({
+                username: user.email,
+                role: user.role,
+                activity: "User Login - FAILED",
+                resource: "unknown"
+            });
+
             return res.render('login', {
                 title: 'Login',
                 layout: false,
@@ -73,7 +81,8 @@ router.post('/login', async (req, res) => {
         await AuditLog.create({
             username: user.email,
             role: user.role,
-            activity: "User Login"
+            activity: "User Login - SUCCESS",
+            resource: user._id.toString(),
         });
 
         // Redirect based on role
@@ -104,7 +113,8 @@ router.get('/logout', async (req, res) => {
     await AuditLog.create({
         username: user.email,
         role: user.role,
-        activity: "User Logout"
+        activity: "User Logout",
+        resource: user._id.toString(),
     });
 
     req.session.destroy((err) => {

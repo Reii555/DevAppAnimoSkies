@@ -299,6 +299,14 @@ $(document).ready(function(){
                         <select class="form-select nationality" name="nationality">
                             <option value="">Select Nationality</option>
                             <option>Filipino</option>
+                            <option>American</option>
+                            <option>Japanese</option>
+                            <option>Chinese</option>
+                            <option>Korean</option>
+                            <option>British</option>
+                            <option>Australian</option>
+                            <option>Canadian</option>
+                            <option>Other</option>
                         </select>
                         <div class="text-danger small" id="nationalityError"></div>
                     </div>

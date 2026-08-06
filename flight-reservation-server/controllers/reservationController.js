@@ -205,6 +205,8 @@ exports.updateReservation = async (req, res) => {
             });
         }
 
+        const oldReservation = await Reservation.findById(reservationId);
+
         if (reservation.userId.toString() !== req.session.user._id.toString()) {
             return res.status(403).json({
                 success: false,
@@ -260,11 +262,11 @@ exports.updateReservation = async (req, res) => {
         if (mealPreference) {
             const mealPrices = {
                 'Standard': 0,
-                'Vegetarian': 150,
-                'Vegan': 200,
-                'Halal': 250,
-                'Kosher': 300,
-                'Gluten-Free': 200
+                'Vegetarian': 500,
+                'Vegan': 700,
+                'Halal': 1000,
+                'Kosher': 1200,
+                'Gluten-Free': 1500
             };
             reservation.mealPrice = mealPrices[mealPreference] || 0;
             reservation.mealPreference = mealPreference;
@@ -297,7 +299,23 @@ exports.updateReservation = async (req, res) => {
         await AuditLog.create({
             username: user.email,
             role: user.role,
-            activity: "Update Reservation"
+            activity: "Reservation Update",
+            resource: reservation._id.toString(),
+            
+            before: {
+                seatNumber: oldReservation.seatNumber,
+                mealPreference: oldReservation.mealPreference,
+                extraServices: oldReservation.extraServices,
+                total_price: oldReservation.total_price
+            },
+
+            after: {
+                seatNumber: reservation.seatNumber,
+                mealPreference: reservation.mealPreference,
+                extraServices: reservation.extraServices,
+                total_price: reservation.total_price
+            }
+
         });
 
         // Return updated data
@@ -415,6 +433,10 @@ exports.cancelReservation = async (req, res) => {
             });
         }
 
+        const before = {
+            status: reservation.status
+        };
+
         if (reservation.userId.toString() !== req.session.user._id.toString()) {
             return res.status(403).json({
                 success: false,
@@ -438,7 +460,15 @@ exports.cancelReservation = async (req, res) => {
         await AuditLog.create({
             username: user.email,
             role: user.role,
-            activity: "Cancel Reservation"
+            activity: "Reservation Cancellation",
+            resource: reservation._id.toString(),
+
+            before: before,
+
+            after: {
+                status: reservation.status
+            }
+
         });
 
         // Increment available seats 

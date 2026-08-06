@@ -99,7 +99,16 @@ exports.addFlight = async (req, res) => {
         await AuditLog.create({
             username: user.email,
             role: user.role,
-            activity: "Create Flight"
+            activity: "Flight Creation",
+            resource: flight._id.toString(),
+
+            after: {
+                flightNumber: flight.flight_number,
+                airline: flight.airline,
+                origin: flight.origin,
+                destination: flight.destination
+            }
+
         });
 
         res.status(201).json({
@@ -122,6 +131,8 @@ exports.updateFlight = async (req, res) => {
     const user = req.session.user;
 
     try {
+        
+        const oldFlight = await Flight.findById(req.params.id);
 
         const flight = await Flight.findByIdAndUpdate(
             req.params.id,
@@ -136,7 +147,22 @@ exports.updateFlight = async (req, res) => {
         await AuditLog.create({
             username: user.email,
             role: user.role,
-            activity: "Update Flight"
+            activity: "Flight Update",
+            resource: flight._id.toString(),
+
+            before: {
+                flightNumber: oldFlight.flight_number,
+                airline: oldFlight.airline,
+                origin: oldFlight.origin,
+                destination: oldFlight.destination
+            },
+
+            after: {
+                flightNumber: flight.flightNumber,
+                airline: flight.airline,
+                origin: flight.origin,
+                destination: flight.destination
+            }
         });
 
 
@@ -168,7 +194,15 @@ exports.deleteFlight = async (req, res) => {
 
     try {
 
-        const flight = await Flight.findByIdAndDelete(
+        const flight = await Flight.findById(req.params.id);
+
+        const before = {
+            flightNumber: flight.flightNumber,
+            origin: flight.origin,
+            destination: flight.destination
+        };
+
+        await Flight.findByIdAndDelete(
             req.params.id
         );
 
@@ -176,7 +210,9 @@ exports.deleteFlight = async (req, res) => {
         await AuditLog.create({
             username: user.email,
             role: user.role,
-            activity: "Delete Flight"
+            activity: "Flight Deletion",
+            resource: flight._id.toString(),
+            before: before,
         });
 
         if (!flight) {

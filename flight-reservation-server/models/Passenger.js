@@ -9,11 +9,6 @@ const passengerSchema = new mongoose.Schema({
         required: true
     },
 
-    reservation_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Reservation"
-    },
-
     full_name: {
         type: String,
         required: true,

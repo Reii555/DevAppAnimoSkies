@@ -23,9 +23,12 @@ exports.showBookingPage = async (req, res) => {
 exports.savePassenger = async (req, res) => {
     try {
 
+        const user = req.session.user;
+        const userId = user._id;
+
         const passenger = await Passenger.create({
 
-            user_id: req.body.user_id,
+            user_id: userId,
             full_name: req.body.full_name,
             contact_num: req.body.contact_num,
             passport_num: req.body.passport_num,
@@ -118,17 +121,20 @@ exports.bookFlight = async (req, res) => {
             }
         );
 
-
-        await Passenger.findByIdAndUpdate(
-            req.body.passengerId, { reservation_id: reservation._id }
-
-        );
-
         // AUDIT LOG
         await AuditLog.create({
             username: user.email,
             role: user.role,
-            activity: "Create Reservation"
+            activity: "Reservation Creation",
+            resource: reservation._id.toString(),
+
+            after: {
+                flightId: reservation.flightId,
+                passengerId: reservation.passengerId,
+                seatNumber: reservation.seatNumber,
+                status: reservation.status
+            }
+
         });
 
         res.json(reservation);

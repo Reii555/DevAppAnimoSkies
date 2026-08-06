@@ -192,7 +192,12 @@ router.post('/signup', async (req, res) => {
         await AuditLog.create({
             username: user.email,
             role: user.role,
-            activity: "User Registration"
+            activity: "User Registration",
+            resource: user._id.toString(),
+
+            after: {
+                email: user.email
+            }
         });
 
         res.render('login', {

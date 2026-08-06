@@ -20,6 +20,19 @@ const auditLogSchema = new mongoose.Schema({
         activity: {
             type: String,
             required: true 
+        }, 
+
+        resource: { 
+            type: String,
+            required: true
+        },
+
+        before: { 
+            type: Object,
+        },
+
+        after: { 
+            type: Object,
         }
 
 });

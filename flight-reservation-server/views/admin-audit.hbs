@@ -10,9 +10,11 @@
                 <select class="form-select" id="filterActivity">
                     <option value="">All Activities</option>
                     <option value="User Registration">User Registration</option>
-                    <option value="User Login">User Login</option>
+                    <option value="User Login - FAILED">User Login - FAILED</option>
+                    <option value="User Login - SUCCESS">User Login - SUCCESS</option>
                     <option value="User Logout">User Logout</option>
                     <option value="Reservation Creation">Reservation Creation</option>
+                    <option value="Reservation Update">Reservation Update</option>
                     <option value="Reservation Cancellation">Reservation Cancellation</option>
                     <option value="Flight Creation">Flight Creation</option>
                     <option value="Flight Update">Flight Update</option>
@@ -41,6 +43,9 @@
                     <th>Role</th>
                     <th>Activity</th>
                     <th>Date and Time</th>
+                    <th>Resource</th>
+                    <!--<th>Before</th>
+                    <th>After</th>-->
                 </tr>
             </thead>
             <tbody id="auditsTableBody">
@@ -55,6 +60,12 @@
                     <td>{{activity}}</td>
 
                     <td>{{dateTime}}</td>
+
+                    <td>{{resource}}</td>
+
+                    <!--<td>{{before}}</td>
+
+                    <td>{{after}}</td>-->
 
                 </tr>
                 {{/each}}
