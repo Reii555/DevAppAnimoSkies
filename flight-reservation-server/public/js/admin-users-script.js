@@ -1,6 +1,5 @@
 $(document).ready(function() {
 
-    // variablez
     let currentPage = 1;
     const rowsPerPage = 5;
     let filteredUsers = [];
@@ -124,58 +123,6 @@ $(document).ready(function() {
         updatePaginationInfo();
     }
 
-    /*function populateUserTable() {
-        // Calculate which rows to show based on pagination
-        const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        const pageData = filteredUsers.slice(start, end);
-
-        // Build HTML for each row
-        let rows = '';
-        pageData.forEach(user => {
-            // Status badge (green for active, red for deleted)
-            const statusBadge = user.status === 'active' 
-                ? '<span class="badge bg-success">Active</span>'
-                : '<span class="badge bg-danger">Deleted</span>';
-            
-            // Role badge (blue for admin, gray for customer)
-            const roleBadge = user.role === 'admin'
-                ? '<span class="badge bg-primary">Admin</span>'
-                : '<span class="badge bg-secondary">Customer</span>';
-
-            // Build the row
-            rows += `
-                <tr>
-                    <td>${user.id}</td>
-                    <td>${user.name}</td>
-                    <td>${user.email}</td>
-                    <td>${user.phone}</td>
-                    <td>${user.created_at}</td>
-                    <td>${user.last_login}</td>
-                    <td>${statusBadge}</td>
-                    <td>${roleBadge}</td>
-                </tr>
-            `;
-        });
-
-        // If no users found, show a message
-        if (rows === '') {
-            rows = `
-                <tr>
-                    <td colspan="8" class="text-center text-muted py-4">
-                        No users found matching your criteria.
-                    </td>
-                </tr>
-            `;
-        }
-
-        // Insert rows into the table body
-        $('table tbody').html(rows);
-        
-        // Update pagination info
-        paginationTable();
-    }*/
-
     function updatePaginationInfo() {
         const total = totalUsers;
         const totalPages = Math.ceil(total / rowsPerPage) || 1;
@@ -245,99 +192,3 @@ $(document).ready(function() {
     // Initial load
     loadUsers();
 });
-
-    /*function filterUsers() {
-        const search = $('#searchUsers').val().toLowerCase();
-        const filter = $('#filterUsers').val();
-        const sort = $('#sortUsers').val();
-
-        // Filter users
-        filteredUsers = users.filter(user => {
-            // Search: check if search term matches name, email, or phone
-            const matchSearch = user.name.toLowerCase().includes(search) || 
-                               user.email.toLowerCase().includes(search) ||
-                               user.phone.includes(search);
-            
-            // Filter: check if status matches
-            const matchFilter = filter === 'all' || user.status === filter;
-            
-            return matchSearch && matchFilter;
-        });
-
-        // Sort users
-        filteredUsers.sort((a, b) => {
-            if (sort === 'id') return a.id - b.id;
-            if (sort === 'name') return a.name.localeCompare(b.name);
-            if (sort === 'email') return a.email.localeCompare(b.email);
-            if (sort === 'created_at') return a.created_at.localeCompare(b.created_at);
-            if (sort === 'last_login') return a.last_login.localeCompare(b.last_login);
-            if (sort === 'status') return a.status.localeCompare(b.status);
-            return 0;
-        });
-
-        // Reset to page 1 when filtering
-        currentPage = 1;
-        
-        // Re-render the table
-        populateUserTable();
-    }
-
-    function paginationTable() {
-        const total = filteredUsers.length;
-        const totalPages = Math.ceil(total / rowsPerPage) || 1;
-        const start = (currentPage - 1) * rowsPerPage + 1;
-        const end = Math.min(currentPage * rowsPerPage, total);
-
-        // Update pagination info text
-    if (total === 0) {
-        $('#paginationInfo').text('Showing 0 users');
-    } else {
-        $('#paginationInfo').text(`Showing ${start} to ${end} of ${total} users (Page ${currentPage} of ${totalPages})`);
-    }
-    
-    // Update current page display
-    $('#currentPage').text(currentPage);
-
-    // Enable/disable Previous and Next buttons
-    $('#previousPage').prop('disabled', currentPage <= 1);
-    $('#nextPage').prop('disabled', currentPage >= totalPages);
-    }
-
-    // event handlerz
-    
-    // Search input - trigger filter on keyup
-    $('#searchUsers').on('keyup', function() {
-        filterUsers();
-    });
-
-    // Filter dropdown - trigger on change
-    $('#filterUsers').on('change', function() {
-        filterUsers();
-    });
-
-    // Sort dropdown - trigger on change
-    $('#sortUsers').on('change', function() {
-        filterUsers();
-    });
-
-    // Previous page button
-    $('#previousPage').click(function() {
-        if (currentPage > 1) {
-            currentPage--;
-            populateUserTable();
-        }
-    });
-
-    // Next page button
-    $('#nextPage').click(function() {
-        const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            populateUserTable();
-        }
-    });
-    
-    filterUsers();
-
-    console.log(`Loaded ${users.length} users`);
-});*/
