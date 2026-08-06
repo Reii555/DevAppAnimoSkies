@@ -159,7 +159,7 @@ exports.updateFlight = async (req, res) => {
             },
 
             after: {
-                flightNumber: flight.flightNumber,
+                flightNumber: flight.flight_number,
                 airline: flight.airline,
                 origin: flight.origin,
                 destination: flight.destination
@@ -198,7 +198,8 @@ exports.deleteFlight = async (req, res) => {
         const flight = await Flight.findById(req.params.id);
 
         const before = {
-            flightNumber: flight.flightNumber,
+            flightNumber: flight.flight_number,
+            airline: flight.airline,
             origin: flight.origin,
             destination: flight.destination
         };
