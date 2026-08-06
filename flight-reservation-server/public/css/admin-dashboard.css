@@ -153,12 +153,13 @@ body {
 }
 
 /* Main */
+/*
 .Admin-panel-main {
     margin-left: 260px;
     padding: 30px 40px 40px;
     min-height: 100vh;
     transition: margin-left 0.3s ease;
-}
+}*/
 
 .Admin-panel-main.sidebar-open {
     margin-left: 0;
