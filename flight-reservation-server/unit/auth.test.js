@@ -17,9 +17,7 @@ describe("Authentication", () => {
     // Successful Registration
     test("Successful Registration", async () => {
 
-        const res = await request(app)
-            .post("/register")
-            .send({
+        const res = await request(app).post("/signup").send({
                 email: "test@test.com",
                 phone: "09123456789",
                 password: "password123",

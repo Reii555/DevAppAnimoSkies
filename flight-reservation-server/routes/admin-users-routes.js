@@ -1,4 +1,3 @@
-// routes/admin-users-routes.js
 const express = require('express');
 const router = express.Router();
 const User = require("../models/User");
