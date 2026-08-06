@@ -22,7 +22,6 @@ exports.renderFlights = async (req, res) => {
     }
 };
 
-
 // statistics
 exports.getFlightData = async (req, res) => {
 
@@ -134,7 +133,6 @@ exports.updateFlight = async (req, res) => {
     try {
         
         const oldFlight = await Flight.findById(req.params.id);
-
         const flight = await Flight.findByIdAndUpdate(
             req.params.id,
             req.body,

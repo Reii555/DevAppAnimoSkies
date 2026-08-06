@@ -183,7 +183,6 @@ function applyFilters() {
         },
 
         error: function (error) {
-
             console.error("Error searching flights:", error);
         }
     });
@@ -201,7 +200,6 @@ function updatePagination(totalRows) {
     $("#currentPage").text(currentPage);
 
     let start = ((currentPage - 1) * rowsPerPage) + 1;
-
     let end = Math.min(currentPage * rowsPerPage, totalRows);
 
     if (totalRows === 0) {
@@ -210,9 +208,7 @@ function updatePagination(totalRows) {
     }
 
     $("#paginationInfo").text( `Showing ${start} to ${end} of ${totalRows} flights`);
-
     $("#previousPage").prop( "disabled", currentPage === 1);
-
     $("#nextPage").prop("disabled", currentPage === totalPages);
 }
 
@@ -388,7 +384,6 @@ async function validateFlightForm() {
     return valid;
 }
 
-
 //clear form
 function clearFlightForm() {
 
@@ -415,7 +410,6 @@ function clearFlightForm() {
 
 
 $(document).ready(function () {
-
 
     //load
     applyFilters();
