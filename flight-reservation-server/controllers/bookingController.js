@@ -126,7 +126,7 @@ exports.bookFlight = async (req, res) => {
             username: user.email,
             role: user.role,
             activity: "Reservation Creation",
-            resource: reservation._id.toString(),
+            resource: reservation.booking_ref,
 
             after: {
                 flightId: reservation.flightId,

@@ -193,7 +193,7 @@ router.post('/signup', async (req, res) => {
             username: user.email,
             role: user.role,
             activity: "User Registration",
-            resource: user._id.toString(),
+            resource: user.email,
 
             after: {
                 email: user.email
