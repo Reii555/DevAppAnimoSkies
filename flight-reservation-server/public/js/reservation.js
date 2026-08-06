@@ -371,6 +371,9 @@ $(document).ready(function() {
                     
                     $(document).off('click', '.seat-btn:not(:disabled)');
                     $(document).on('click', '.seat-btn:not(:disabled)', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+
                         var seat = $(this).data('seat');
                         var isPremium = parseInt(seat) <= 3;
                         
