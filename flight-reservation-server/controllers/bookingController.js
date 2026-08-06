@@ -8,10 +8,13 @@ const AuditLog = require("../models/AuditLog");
 exports.showBookingPage = async (req, res) => {
     try {
         const flight = await Flight.findById(req.params.id).lean();
+        const passengers = await Passenger.find({ user_id: req.session.user._id });
+        console.log(passengers);
 
         res.render('booking', {
             title: 'Book Flight',
-            flight
+            flight,
+            passengers
         });
 
     } catch (err) {
@@ -31,6 +34,7 @@ exports.savePassenger = async (req, res) => {
             user_id: userId,
             full_name: req.body.full_name,
             contact_num: req.body.contact_num,
+            email: req.body.email,
             passport_num: req.body.passport_num,
             nationality: req.body.nationality,
             birth_date: req.body.birth_date,
