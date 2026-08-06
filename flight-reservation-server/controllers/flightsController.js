@@ -101,7 +101,7 @@ exports.addFlight = async (req, res) => {
             username: user.email,
             role: user.role,
             activity: "Flight Creation",
-            resource: flight._id.toString(),
+            resource: flight.flight_number,
 
             after: {
                 flightNumber: flight.flight_number,
@@ -149,7 +149,7 @@ exports.updateFlight = async (req, res) => {
             username: user.email,
             role: user.role,
             activity: "Flight Update",
-            resource: flight._id.toString(),
+            resource: flight.flight_number,
 
             before: {
                 flightNumber: oldFlight.flight_number,
@@ -212,7 +212,7 @@ exports.deleteFlight = async (req, res) => {
             username: user.email,
             role: user.role,
             activity: "Flight Deletion",
-            resource: flight._id.toString(),
+            resource: flight.flight_number,
             before: before,
         });
 

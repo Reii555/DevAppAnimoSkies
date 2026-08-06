@@ -358,15 +358,13 @@ exports.updateReservationSeat = async (req, res) => {
 
         console.log(`[DEBUG] Reservation ${reservationId} updated successfully. New price: ${newTotalPrice}`);
 
-        // ============================================================
         // AUDIT LOG 
-        // ============================================================
         const user = req.session.user;
         await AuditLog.create({
             username: user.email,
             role: user.role,
             activity: "Reservation Update",
-            resource: reservation._id.toString(),
+            resource: reservation.booking_ref,
             
             before: {
                 seatNumber: oldReservation.seatNumber,
@@ -445,7 +443,7 @@ exports.cancelReservation = async (req, res) => {
             username: user.email,
             role: user.role,
             activity: "Reservation Cancellation",
-            resource: reservation._id.toString(),
+            resource: reservation.booking_ref,
 
             before: before,
 
