@@ -49,9 +49,7 @@ describe("Authentication", () => {
             status: "active"
         });
 
-        const res = await request(app)
-            .post("/login")
-            .send({
+        const res = await request(app).post("/login").send({
                 email: "user@test.com",
                 password: "password123"
             });
@@ -62,9 +60,7 @@ describe("Authentication", () => {
     // Failed Login
     test("Failed Login", async () => {
 
-        const res = await request(app)
-            .post("/login")
-            .send({
+        const res = await request(app).post("/login").send({
                 email: "wrong@test.com",
                 password: "wrongpassword"
             });
