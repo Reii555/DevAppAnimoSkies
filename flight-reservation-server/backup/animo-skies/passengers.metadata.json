@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"passport_num":{"$numberInt":"1"}},"name":"passport_num_1","background":true,"unique":true}],"uuid":"bdca07cea48342049593af61ce2ecfad","collectionName":"passengers","type":"collection"}
