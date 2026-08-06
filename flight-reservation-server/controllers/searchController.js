@@ -118,8 +118,6 @@ exports.showFlights = async (req, res) => {
             query.tripType = tripType;
         }
 
-        // passenger (to be implemented)
-
         // cabin class
         if (cabinClass){
             query.cabinClass = cabinClass;
@@ -155,7 +153,7 @@ exports.showFlights = async (req, res) => {
 
         const flights = await Flight.find(query).lean();
 
-        console.log(req.body); // to double check what data was selected to search for 
+        console.log(req.body); 
 
         formatFlights(flights);
 

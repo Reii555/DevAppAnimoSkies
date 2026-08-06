@@ -14,7 +14,6 @@ exports.renderDashboard = async (req, res) => {
         });
 
         const totalReservations = await Reservation.countDocuments();
-
         const totalFlights = await Flight.countDocuments();
 
         // Most booked destinations
@@ -152,7 +151,6 @@ exports.viewAuditLogs = async (req, res) => {
     try {
 
         const logs = await AuditLog.find().sort({ dateTime: -1 });
-
         const usernames = await AuditLog.distinct("username");
 
         res.render('admin-audit', {
@@ -163,9 +161,7 @@ exports.viewAuditLogs = async (req, res) => {
         });
 
     } catch (error) {
-
         console.error(error);
-
         res.status(500).send("Error loading audit logs");
 
     }

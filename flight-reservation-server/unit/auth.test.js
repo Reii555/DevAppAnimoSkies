@@ -4,7 +4,11 @@ const app = require("../server");
 const User = require("../models/User");
 const AuditLog = require("../models/AuditLog");
 
+<<<<<<< HEAD
 // mock audit log so it doesn't affect authentication tests
+=======
+//mock audit log so it doesn't affect authentication tests
+>>>>>>> 202697c140a1bfba50e61d5e7ea12bbb3c4b0eb1
 jest.spyOn(AuditLog, "create").mockResolvedValue({});
 
 describe("Authentication", () => {
@@ -17,9 +21,7 @@ describe("Authentication", () => {
     // successful registration
     test("Successful Registration", async () => {
 
-        const res = await request(app)
-            .post("/register")
-            .send({
+        const res = await request(app).post("/signup").send({
                 email: "test@test.com",
                 phone: "09123456789",
                 password: "password123",
@@ -51,9 +53,7 @@ describe("Authentication", () => {
             status: "active"
         });
 
-        const res = await request(app)
-            .post("/login")
-            .send({
+        const res = await request(app).post("/login").send({
                 email: "user@test.com",
                 password: "password123"
             });
@@ -64,9 +64,7 @@ describe("Authentication", () => {
     // failed login
     test("Failed Login", async () => {
 
-        const res = await request(app)
-            .post("/login")
-            .send({
+        const res = await request(app).post("/login").send({
                 email: "wrong@test.com",
                 password: "wrongpassword"
             });
