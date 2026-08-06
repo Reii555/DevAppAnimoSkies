@@ -4,7 +4,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "seed": "node seed/seed.js"
+    "seed": "node seed/seed.js",
+    "unit": "jest --runInBand --detectOpenHandles"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -17,5 +18,10 @@
   },
   "allowScripts": {
     "bcrypt@6.0.0": true
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "mongodb-memory-server": "^11.2.0",
+    "supertest": "^7.2.2"
   }
 }
