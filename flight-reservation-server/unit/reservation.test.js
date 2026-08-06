@@ -123,7 +123,7 @@ describe("Reservation Management", () => {
     });
 
 
-
+    //create reservation
     test("Create Reservation", async()=>{
 
 
@@ -204,7 +204,7 @@ describe("Reservation Management", () => {
     });
 
 
-
+    //cancel reservation
     test("Cancel Reservation", async()=>{
 
 
