@@ -82,7 +82,7 @@ router.post('/login', async (req, res) => {
             username: user.email,
             role: user.role,
             activity: "User Login - SUCCESS",
-            resource: user._id.toString(),
+            resource: user.email
         });
 
         // Redirect based on role
@@ -114,7 +114,7 @@ router.get('/logout', async (req, res) => {
         username: user.email,
         role: user.role,
         activity: "User Logout",
-        resource: user._id.toString(),
+        resource: user.email
     });
 
     req.session.destroy((err) => {
